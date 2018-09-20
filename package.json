@@ -1,6 +1,6 @@
 {
   "name": "seneca-group",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Seneca plugin for user and group permissions.",
   "main": "group.js",
   "scripts": {
