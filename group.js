@@ -39,7 +39,8 @@ function group(opts) {
     .message('role:group,remove:user', remove_user)
     .message('role:group,list:user', list_user)
     .message('role:group,list:user-group', list_user_group)
-
+    .message('role:group,is:user-group-owner', is_user_in_group_for_owner)
+  
     .prepare(async function() {
       await this.post('role:member,add:kinds', {kinds: opts.kinds})
     })
@@ -88,7 +89,7 @@ function group(opts) {
       })
     }
     
-    return {ok: true, group: grp}
+    return {group: grp}
   }
 
   
@@ -102,7 +103,7 @@ function group(opts) {
       code:msg.code
     })
 
-    return {ok: true, list: group_list.items}
+    return {items: group_list.items}
   }
 
 
@@ -146,7 +147,7 @@ function group(opts) {
       code: msg.code,
     })
       
-    return {ok: true, member: member}
+    return {member: member}
   }
 
   async function list_user(msg) {
@@ -167,6 +168,7 @@ function group(opts) {
     const owner_id = msg.owner_id
     
     const group_list = await this.post('role:member,list:parents', {
+      child:user_id,
       as:'parent',
       kind:'usrgrp',
       code:msg.code
@@ -179,17 +181,53 @@ function group(opts) {
         var out = await this.post('role:member,is:member', {
           parent: owner_id, child: group.id, kind: 'grpown', code: msg.owner_code
         })
-        //var group_owner = this.entity('sys/member')
-        //    .load({p:owner_id,c:group.id,k:'grpown',d:msg.owner_code})
-        //if(group_owner) {
 
         if(out.member) {
           items.push(group)
         }
       }
+
+      group_list.items = items
     }
     
-    return {ok: true, list: group_list.items}
+    return {items: group_list.items}
+  }
+
+
+  async function is_user_in_group_for_owner(msg) {
+    const user_id = msg.user_id
+    var grp_id = msg.group_id
+    const grp_code = msg.group_code
+    const owner_code = msg.owner_code
+    const owner_id = msg.owner_id
+
+    var group = null
+
+    // Picks first group with given code
+    if( null == grp_id && null != owner_code && null != owner_id ) {
+      var owner_member = (await this.post('role:member,is:member', {
+        as: 'child',
+        parent: owner_id,
+        code: owner_code,
+      })).member
+
+      grp_id = owner_member && owner_member.c
+    }
+
+    var member = (await this.post('role:member,is:member', {
+      parent: grp_id,
+      child: user_id,
+      //code: grp_code
+    })).member
+
+    return {
+      member: member,
+      user_id: user_id,
+      group_id: grp_id,
+      group_code: grp_code,
+      owner_code: owner_code,
+      owner_id: owner_id
+    }
   }
 
 }
