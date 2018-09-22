@@ -13,50 +13,119 @@ module.exports = {
   context: {},
   calls: [
 
-    // add some groups
+    // basic group operations
     {
-      name:'add-g1',
-      pattern: 'amend:group',
+      name:'add_g1',
+      pattern: 'make:group',
       params: {owner_id:'o0', group:{name:'Group One', mark:'a'}},
       out: {group:{mark:'a', name: 'Group One'}}
+    },    
+    {
+      pattern: 'amend:group',
+      params: {id:'`$.g1 = $.add_g1.out.group.id`', group:{name:'The One Group'}},
+      out: {group:{mark:'a', name:'The One Group'}}
+    },    
+    {
+      pattern: 'get:group',
+      params: {id:'`$.g1`', owners:true},
+      out: {group:{mark:'a', name:'The One Group'}}
     },    
     {
       pattern: 'list:group',
       params: {owner_id:'o0'},
       out: {items:[{mark:'a'}]}
-    },
+    },    
+
+    // unique groups
+
     {
-      name:'add-g2',
-      pattern: 'amend:group',
-      params: {owner_id:'o0', code:'d0', group:{name:'Group Two', mark:'b'}},
+      name:'add_g2',
+      pattern: 'make:group',
+      params: {owner_id:'o0',
+               group:{name:'Group Two', mark:'b', code:'staff'},
+               unique:true},
+      out: {group:{mark:'b', name: 'Group Two'}}
+    },    
+    {
+      pattern: 'get:group',
+      params: {id:'`$.g2 = $.add_g2.out.group.id`'},
       out: {group:{mark:'b'}}
     },    
+    {
+      pattern: 'get:group',
+      params: {owner_id:'o0', code:'staff'},
+      out: {group:{mark:'b'}}
+    },
+
+// TODO: fix seneca-msg-test so it can handle this
+    /*
+    {
+      pattern: 'make:group',
+      params: {owner_id:'o0',
+               group:{name:'Group Two Bad', mark: 'bbad', code:'staff'}},
+      err: {}
+    },    
+*/
+
+    // single and multiple owners
+    
+    {
+      name:'add_g3',
+      pattern: 'make:group',
+      params: {owner_id:'o1', group:{name:'Group Three', mark:'c'}},
+      out: {group:{mark:'c', name: 'Group Three'}}
+    },    
+    {
+      pattern: 'add:group',
+      params: {id:'`$.g3 = $.add_g3.out.group.id`', owner_id:'o2'},
+      out: {}
+    },    
+
     {
       pattern: 'list:group',
       params: {owner_id:'o0'},
       out: {items:[{mark:'a'},{mark:'b'}]}
-    },
-
-    // edit group
-    {
-      pattern: 'amend:group',
-      params: {id:'`add-g1:out.group.id`', group:{name:'The One Group'}},
-      out: {group:{mark:'a', name:'The One Group'}}
     },    
     {
       pattern: 'list:group',
-      params: {owner_id:'o0'},
-      out: {items:[
-        {mark:'a', name:'The One Group'},
-        {mark:'b', name:'Group Two'}]}
-    },
+      params: {owner_id:'o1'},
+      out: {items:[{mark:'c'}]}
+    },    
+    {
+      pattern: 'list:group',
+      params: {owner_id:'o2'},
+      out: {items:[{mark:'c'}]}
+    },    
 
+    {
+      pattern: 'list:group-owner',
+      params: {id:'`$.g1`'},
+      out: {}
+    },    
+    {
+      pattern: 'list:group-owner',
+      params: {id:'`$.g2`'},
+      out: {}
+    },    
+    {
+      pattern: 'list:group-owner',
+      params: {id:'`$.g3`'},
+      out: {}
+    },    
+
+/*
+    {
+      pattern:'role:mem-store,cmd:dump',
+      params:{},
+      out:{}
+    },
+  */  
 
     // remove group
     {
-      pattern: 'amend:group',
-      params: {id:'`add-g1:out.group.id`', remove:true},
-      out: {group:{mark:'a', name:'The One Group'}}
+      pattern: 'remove:group',
+      params: {id:'`$.g1`', owner_id:'o0'},
+      out: {owner_id:'o0'}
     },    
     {
       pattern: 'list:group',
@@ -68,50 +137,24 @@ module.exports = {
     // add user to group
     {
       pattern: 'add:user',
-      params: {user_id:'u0', group_id:'`add-g2:out.group.id`'},
+      params: {user_id:'u0', group_id:'`$.g2`'},
       out: {}
     },    
     {
       pattern: 'list:user',
-      params: {group_id:'`add-g2:out.group.id`'},
+      params: {group_id:'`$.g2`'},
       out: {items:[{id:'u0'}]}
     },    
     {
       pattern: 'add:user',
-      params: {user_id:'u1', group_id:'`add-g2:out.group.id`'},
+      params: {user_id:'u1', group_id:'`$.g2`'},
       out: {}
     },    
     {
       pattern: 'list:user',
-      params: {group_id:'`add-g2:out.group.id`'},
+      params: {group_id:'`$.g2`'},
       out: {items:[{id:'u0'},{id:'u1'}]}
     },    
-
-
-    // multi-owner group
-    {
-      name:'add-g3o2',
-      pattern: 'amend:group',
-      params: {owner_id:'o2', group:{name:'Group Three', mark:'c'}},
-      out: {group:{mark:'c'}}
-    },    
-    {
-      name:'add-g3o3',
-      pattern: 'amend:group',
-      params: {owner_id:'o3', id:'`add-g3o2:out.group.id`'},
-      out: {group:{mark:'c'}}
-    },    
-    {
-      pattern: 'list:group-owner',
-      params: {id:'`add-g3o2:out.group.id`'},
-      out: {items:[{id:'o2'},{id:'o3'}]}
-    },    
-
-    {
-      pattern: 'role:mem-store,cmd:dump',
-      params: {},
-      out: {}
-    },
 
     // users groups    
     {
@@ -121,7 +164,7 @@ module.exports = {
     },    
     {
       pattern: 'add:user',
-      params: {user_id:'u1', group_id:'`add-g3o2:out.group.id`'},
+      params: {user_id:'u1', group_id:'`$.g3`'},
       out: {}
     },    
     {
@@ -145,7 +188,7 @@ module.exports = {
     // remove user from group
     {
       pattern: 'remove:user',
-      params: {user_id:'u1',group_id:'`add-g3o2:out.group.id`'},
+      params: {user_id:'u1',group_id:'`$.g3`'},
       out: {}
     },    
     {

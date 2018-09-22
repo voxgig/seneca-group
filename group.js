@@ -14,6 +14,9 @@ const Util = require('util')
 const Optioner = require('optioner')
 const Joi = Optioner.Joi
 
+const SYS_GROUP_SV = 0
+
+
 module.exports = group
 module.exports.defaults = {
   test: false,
@@ -31,9 +34,18 @@ module.exports.defaults = {
 
 function group(opts) {
   this
-    .message('role:group,amend:group', amend_group)
-    .message('role:group,list:group', list_group)
+    .message('role:group,make:group', make_group)     // Create a group
+    .message('role:group,amend:group', amend_group)   // Update group fields
+    .message('role:group,get:group', get_group)       // Load group
+    .message('role:group,add:group', add_group)       // Add group to owner
+    .message('role:group,list:group', list_group)     // List group by owner
     .message('role:group,list:group-owner', list_group_owner)
+    .message('role:group,remove:group', remove_group) // Remove group from owner
+  // TODO: retire_group to delete entity
+  // TODO: move_group to another owner
+
+  
+
 
     .message('role:group,add:user', add_user)
     .message('role:group,remove:user', remove_user)
@@ -45,62 +57,150 @@ function group(opts) {
       await this.post('role:member,add:kinds', {kinds: opts.kinds})
     })
 
-  
-  async function amend_group(msg) {
-    var grp = null
-    const grp_id = msg.id
 
-    // NOTE: this deletes the group entirely; an additional option might to
-    // remove the group from an org, but leave it in other orgs
-    if(grp_id && msg.remove) {
+  async function make_group(msg) {
+    const owner_id = msg.owner_id
+    const fields = msg.group || {}
+    const unique = !!msg.unique
 
-      // As no parent is specified, the group is removed from all orgs
-      await this.post('role:member,remove:member', {
-        kind:'grpown',
-        child:grp_id,
-      })
-      
-      grp = await this.entity('sys/group').remove$({id: grp_id, load$:true})
+    fields.merge$ = true
+    fields.sv = SYS_GROUP_SV
+    
+    var existing = await intern.find_group(this, {
+      owner_id:owner_id,
+      code:fields.code
+    })
+
+    if(existing && existing.unique) {
+      throw new Error('unique exists')
     }
-    else {
-      // TODO: validate
-      /*
-      const grp_fields = {
-        name: msg.group.name,
-        owner_id: msg.group.owner_id
-      }
-      */
-      const grp_fields = msg.group || {}
+    
+    var group = this.entity('sys/group')
+    
+    // Unique group means unique over (code,owner_id)
+    if(unique && null != fields.code) {
+      group = await group.load$({code:fields.code, owner_id:owner_id}) || group
+      fields.owner_id = owner_id
+      fields.unique = true
+    }
 
-      if(grp_id) {
-        grp_fields.id = grp_id
-      }
+    group = await group.data$(fields).save$()
 
-      grp_fields.merge$ = true
-      
-      grp = await this.entity('sys/group').data$(grp_fields).save$()
+    var m = await this.post('role:member,add:member', {
+      kind:'grpown',
+      parent:owner_id,
+      child:group.id,
+      code:fields.code,
+      tags:fields.tags,
+    })
+    
+    return {group: group}
+  }
 
-      var m = await this.post('role:member,add:member', {
+
+  // Only changes fields, not owner, or uniqueness
+  async function amend_group(msg) {
+    var group = await intern.find_group(this, msg)
+    const fields = msg.group || {}
+
+    // These determine uniqueness so cannot be altered
+    delete fields.unique
+    delete fields.code
+    delete fields.owner_id
+    
+    fields.merge$ = true
+    fields.sv = SYS_GROUP_SV
+
+    group = await group.data$(fields).save$()
+
+    if(fields.tags) {
+      const members = (await this.post('role:member,list:parents', {
+        as:'member',
         kind:'grpown',
-        parent:msg.owner_id,
-        child:grp.id,
-        code:msg.code,
-        tags:msg.tags,
+        child:group.id,
+      })).items
+    
+      for(var i = 0; i < items.length; i++) {
+        items[i].tags = fields.tags
+        await items[i].save$()
+      }
+    }
+    
+    return {group: group}
+  }
+
+
+  async function get_group(msg) {
+    const include_owners = !!msg.owners
+    
+    const group = await intern.find_group(this, msg)
+    const out = {group: group}
+
+    if(include_owners) {
+      out.owners = (await this.post('role:member,list:parents', {
+        as:'parent-id',
+        kind:'grpown',
+        child:group.id,
+      })).items
+    }
+
+    return out
+  }
+
+
+  async function add_group(msg) {
+    const group_id = msg.id
+    const owner_id = msg.owner_id
+    const code = msg.code
+    const tags = msg.tags
+    
+    const owners = (await this.post('role:member,list:parents', {
+      as:'parent-id',
+      kind:'grpown',
+      child:group_id,
+    })).items
+
+    if(!owners.includes(owner_id)) {
+      await this.post('role:member,add:member', {
+        kind:'grpown',
+        parent:owner_id,
+        child:group_id,
+        code:code,
+        tags:tags,
       })
     }
     
-    return {group: grp}
+    return {id: group_id, owner_id: owner_id}
   }
+
+
+  async function remove_group(msg) {
+    const group_id = msg.id
+    const owner_id = msg.owner_id
+
+    if(null != owner_id) {
+      await this.post('role:member,remove:member', {
+        kind:'grpown',
+        parent:owner_id,
+        child:group_id,
+      })
+    }
+    
+    return {id: group_id, owner_id: owner_id}
+  }
+
 
   
   async function list_group(msg) {
     // TODO: validate, owner_id is required
-
+    const owner_id = msg.owner_id
+    const code = msg.code
+    
     const group_list = await this.post('role:member,list:children', {
       as:'child',
       kind:'grpown',
-      parent:msg.owner_id,
-      code:msg.code
+      parent:owner_id,
+      code:code
     })
 
     return {items: group_list.items}
@@ -231,4 +331,28 @@ function group(opts) {
   }
 
 }
+
+
+const intern = (module.exports.intern = {
+
+  find_group: async function(seneca, msg) {
+    const q = {}
+
+    if(null != msg.id) {
+      q.id = msg.id
+    }
+
+    // NOTE: both needed to preserve code uniquness of group within owner
+    else if(null != msg.owner_id && null != msg.code ) {
+      q.owner_id = msg.owner_id
+      q.code = msg.code
+    }
+    else {
+      return null
+    }
+    
+    return await seneca.entity('sys/group').load$(q)
+  }
+
+})
 
