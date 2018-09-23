@@ -72,7 +72,7 @@ function group(opts) {
     })
 
     if(existing && existing.unique) {
-      throw new Error('unique exists')
+      return {group: existing, exists:true}
     }
     
     var group = this.entity('sys/group')
@@ -94,7 +94,7 @@ function group(opts) {
       tags:fields.tags,
     })
     
-    return {group: group}
+    return {group: group, created:true}
   }
 
 

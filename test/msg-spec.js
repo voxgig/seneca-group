@@ -57,15 +57,12 @@ module.exports = {
       out: {group:{mark:'b'}}
     },
 
-// TODO: fix seneca-msg-test so it can handle this
-    /*
     {
       pattern: 'make:group',
       params: {owner_id:'o0',
                group:{name:'Group Two Bad', mark: 'bbad', code:'staff'}},
-      err: {}
+      out: {group:{mark:'b'}}
     },    
-*/
 
     // single and multiple owners
     
