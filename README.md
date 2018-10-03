@@ -21,6 +21,7 @@
 
 
 
+
 [BadgeCoveralls]: https://coveralls.io/repos/voxgig/seneca-group/badge.svg?branch=master&service=github
 [BadgeNpm]: https://badge.fury.io/js/seneca-group.svg
 [BadgeTravis]: https://travis-ci.org/voxgig/seneca-group.svg?branch=master
