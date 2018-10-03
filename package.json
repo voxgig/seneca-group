@@ -25,8 +25,7 @@
     "LICENSE",
     "README.md",
     "group.js",
-    "lib/errors.js",
-    "lib/promise.js"
+    "lib/errors.js"
   ],
   "engines": {
     "node": ">=8"
@@ -40,8 +39,10 @@
     "lab": "14",
     "prettier": "1",
     "seneca": "github:senecajs/seneca",
+    "seneca-promisify": "0.2",
     "seneca-entity": "2",
-    "seneca-member": "0.0.8",
+    "seneca-joi": "2",
+    "seneca-member": "0.0.9",
     "seneca-plugin-validator": "0",
     "seneca-msg-test": "0"
   }

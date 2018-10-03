@@ -35,7 +35,8 @@ lab.test(
 function seneca_instance(fin, testmode) {
   return Seneca()
     .test(fin, testmode)
-    .use(__dirname+'/../lib/promise')
+    .use('promisify')
+    .use('seneca-joi')
     .use('entity')
     .use('member')
     .use(Plugin)

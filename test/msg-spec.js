@@ -17,23 +17,23 @@ module.exports = {
     {
       name:'add_g1',
       pattern: 'make:group',
-      params: {owner_id:'o0', group:{name:'Group One', mark:'a'}},
-      out: {group:{mark:'a', name: 'Group One'}}
+      params: {owner_id:'o0', group:{name:'Group One', mark:'a', code:'standard'}},
+      out: {group:{mark:'a', name: 'Group One', code:'standard'}}
     },    
     {
       pattern: 'amend:group',
       params: {id:'`$.g1 = $.add_g1.out.group.id`', group:{name:'The One Group'}},
-      out: {group:{mark:'a', name:'The One Group'}}
+      out: {group:{mark:'a', name:'The One Group', code:'standard'}}
     },    
     {
       pattern: 'get:group',
       params: {id:'`$.g1`', owners:true},
-      out: {group:{mark:'a', name:'The One Group'}}
+      out: {group:{mark:'a', name:'The One Group', code:'standard'}}
     },    
     {
       pattern: 'list:group',
       params: {owner_id:'o0'},
-      out: {items:[{mark:'a'}]}
+      out: {items:[{mark:'a', code:'standard'}]}
     },    
 
     // unique groups
@@ -69,13 +69,13 @@ module.exports = {
     {
       name:'add_g3',
       pattern: 'make:group',
-      params: {owner_id:'o1', group:{name:'Group Three', mark:'c'}},
+      params: {owner_id:'o1', group:{name:'Group Three', mark:'c', code:'standard'}},
       out: {group:{mark:'c', name: 'Group Three'}}
     },    
     {
       pattern: 'add:group',
       params: {id:'`$.g3 = $.add_g3.out.group.id`', owner_id:'o2'},
-      out: {}
+      out: { added:true }
     },    
 
     {
@@ -178,7 +178,7 @@ module.exports = {
     {
       pattern: 'is:user-group-owner',
       params: {user_id:'u1',owner_id:'o0',owner_code:'d0'},
-      out: {}
+      out: { member: null }
     },    
 
     

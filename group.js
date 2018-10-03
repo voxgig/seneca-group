@@ -33,19 +33,19 @@ module.exports.defaults = {
 }
 
 function group(opts) {
-  this
-    .message('role:group,make:group', make_group)     // Create a group
-    .message('role:group,amend:group', amend_group)   // Update group fields
-    .message('role:group,get:group', get_group)       // Load group
-    .message('role:group,add:group', add_group)       // Add group to owner
-    .message('role:group,list:group', list_group)     // List group by owner
-    .message('role:group,list:group-owner', list_group_owner)
-    .message('role:group,remove:group', remove_group) // Remove group from owner
-  // TODO: retire_group to delete entity
-  // TODO: move_group to another owner
+  const seneca = this
 
-  
-
+  function define_patterns() {
+    seneca
+      .message('role:group,make:group', make_group)     // Create a group
+      .message('role:group,amend:group', amend_group)   // Update group fields
+      .message('role:group,get:group', get_group)       // Load group
+      .message('role:group,add:group', add_group)       // Add group to owner
+      .message('role:group,list:group', list_group)     // List group by owner
+      .message('role:group,list:group-owner', list_group_owner)
+      .message('role:group,remove:group', remove_group) // Remove group from owner
+    // TODO: retire_group to delete entity
+    // TODO: move_group to another owner
 
     .message('role:group,add:user', add_user)
     .message('role:group,remove:user', remove_user)
@@ -56,8 +56,19 @@ function group(opts) {
     .prepare(async function() {
       await this.post('role:member,add:kinds', {kinds: opts.kinds})
     })
+  }
+  
 
-
+  make_group.validate = {
+    owner_id: Joi.string().required(),
+    group: Joi.object({
+      name: Joi.string().required(),
+      code: Joi.string().required(),
+      tags: Joi.array().items(Joi.string())
+    }).unknown().required(),
+    unique: Joi.boolean()
+  }
+  
   async function make_group(msg) {
     const owner_id = msg.owner_id
     const fields = msg.group || {}
@@ -98,31 +109,45 @@ function group(opts) {
   }
 
 
+  amend_group.validate = {
+    id: Joi.string(),
+    owner_id: Joi.string(),
+    code: Joi.string(),
+    group: Joi.object({
+      name: Joi.string(),
+      tags: Joi.array().items(Joi.string())
+    }).unknown().required(),
+  }
+
   // Only changes fields, not owner, or uniqueness
   async function amend_group(msg) {
     var group = await intern.find_group(this, msg)
-    const fields = msg.group || {}
 
-    // These determine uniqueness so cannot be altered
-    delete fields.unique
-    delete fields.code
-    delete fields.owner_id
-    
-    fields.merge$ = true
-    fields.sv = SYS_GROUP_SV
+    if(group) {
+      const fields = msg.group || {}
 
-    group = await group.data$(fields).save$()
+      // These determine uniqueness so cannot be altered
+      delete fields.unique
+      delete fields.code
+      delete fields.owner_id
+      
+      fields.merge$ = true
+      fields.sv = SYS_GROUP_SV
+      
+      group = await group.data$(fields).save$()
 
-    if(fields.tags) {
-      const members = (await this.post('role:member,list:parents', {
-        as:'member',
-        kind:'grpown',
+      // update tags in membership relations
+      if(fields.tags) {
+        const members = (await this.post('role:member,list:parents', {
+          as:'member',
+          kind:'grpown',
         child:group.id,
-      })).items
-    
-      for(var i = 0; i < items.length; i++) {
-        items[i].tags = fields.tags
-        await items[i].save$()
+        })).items
+        
+        for(var i = 0; i < items.length; i++) {
+          items[i].tags = fields.tags
+          await items[i].save$()
+        }
       }
     }
     
@@ -130,13 +155,19 @@ function group(opts) {
   }
 
 
+  get_group.validate = {
+    id: Joi.string(),
+    owner_id: Joi.string(),
+    code: Joi.string(),
+  }
+
   async function get_group(msg) {
     const include_owners = !!msg.owners
     
     const group = await intern.find_group(this, msg)
     const out = {group: group}
 
-    if(include_owners) {
+    if(group && include_owners) {
       out.owners = (await this.post('role:member,list:parents', {
         as:'parent-id',
         kind:'grpown',
@@ -148,11 +179,19 @@ function group(opts) {
   }
 
 
+  add_group.validate = {
+    id: Joi.string().required(),
+    owner_id: Joi.string().required(),
+    code: Joi.string(),
+    tags: Joi.array().items(Joi.string())
+  }
+
+  
   async function add_group(msg) {
     const group_id = msg.id
     const owner_id = msg.owner_id
-    const code = msg.code
-    const tags = msg.tags
+
+    const out = {added: false, id: group_id, owner_id: owner_id}
     
     const owners = (await this.post('role:member,list:parents', {
       as:'parent-id',
@@ -161,19 +200,35 @@ function group(opts) {
     })).items
 
     if(!owners.includes(owner_id)) {
-      await this.post('role:member,add:member', {
-        kind:'grpown',
-        parent:owner_id,
-        child:group_id,
-        code:code,
-        tags:tags,
+      var group = this.entity('sys/group').load$({
+        id:group_id,
+        fields$:['code','tags']
       })
+
+      if(group) {
+        await this.post('role:member,add:member', {
+          kind:'grpown',
+          parent:owner_id,
+          child:group_id,
+
+          // NOTE: copied from group
+          code:group.code,
+          tags:group.tags,
+        })
+
+        out.added = true
+      }
     }
     
-    return {id: group_id, owner_id: owner_id}
+    return out
   }
 
 
+  remove_group.validate = {
+    id: Joi.string().required(),
+    owner_id: Joi.string().required(),
+  }
+  
   async function remove_group(msg) {
     const group_id = msg.id
     const owner_id = msg.owner_id
@@ -190,6 +245,10 @@ function group(opts) {
   }
 
 
+  list_group.validate = {
+    owner_id: Joi.string().required(),
+    code: Joi.string(),
+  }
   
   async function list_group(msg) {
     // TODO: validate, owner_id is required
@@ -207,6 +266,10 @@ function group(opts) {
   }
 
 
+  list_group_owner.validate = {
+    id: Joi.string().required(),
+  }
+
   async function list_group_owner(msg) {
     const group_id = msg.id
     
@@ -220,6 +283,13 @@ function group(opts) {
     return {items: group_list.items}
   }
   
+
+  add_user.validate = {
+    user_id: Joi.string().required(),
+    group_id: Joi.string().required(),
+    code: Joi.string(),
+    tags: Joi.array().items(Joi.string())
+  }
 
   async function add_user(msg) {
     const user_id = msg.user_id
@@ -236,6 +306,13 @@ function group(opts) {
     return member
   }
 
+  
+  remove_user.validate = {
+    user_id: Joi.string().required(),
+    group_id: Joi.string().required(),
+    code: Joi.string(),
+  }
+
   async function remove_user(msg) {
     const user_id = msg.user_id
     const grp_id = msg.group_id
@@ -250,17 +327,30 @@ function group(opts) {
     return {member: member}
   }
 
+
+  list_user.validate = {
+    group_id: Joi.string().required(),
+    code: Joi.string(),
+  }
+
   async function list_user(msg) {
     const grp_id = msg.group_id
     
     const user_list = await this.post('role:member,list:children', {
       as:'child',
       kind:'usrgrp',
-      parent:msg.grp_id,
+      parent:grp_id,
       code:msg.code
     })
 
     return {items: user_list.items}
+  }
+
+
+  list_user_group.validate = {
+    user_id: Joi.string().required(),
+    owner_id: Joi.string(),
+    code: Joi.string(),
   }
 
   async function list_user_group(msg) {
@@ -276,6 +366,9 @@ function group(opts) {
 
     if(owner_id) {
       var items = []
+
+      // TODO: needs to be optimized, as users groups will grow over time
+      // and some users will end up in thousands of groups
       for(var i = 0; i < group_list.items.length; i++) {
         var group = group_list.items[i]
         var out = await this.post('role:member,is:member', {
@@ -293,6 +386,14 @@ function group(opts) {
     return {items: group_list.items}
   }
 
+
+  list_user_group.validate = {
+    user_id: Joi.string().required(),
+    owner_id: Joi.string(),
+    owner_code: Joi.string(),
+    group_id: Joi.string(),
+    group_code: Joi.string(),
+  }
 
   async function is_user_in_group_for_owner(msg) {
     const user_id = msg.user_id
@@ -314,12 +415,15 @@ function group(opts) {
       grp_id = owner_member && owner_member.c
     }
 
-    var member = (await this.post('role:member,is:member', {
-      parent: grp_id,
-      child: user_id,
-      //code: grp_code
-    })).member
+    var member = null
 
+    if(grp_id) {
+      member = (await this.post('role:member,is:member', {
+        parent: grp_id,
+        child: user_id,
+      })).member
+    }
+    
     return {
       member: member,
       user_id: user_id,
@@ -330,6 +434,7 @@ function group(opts) {
     }
   }
 
+  return define_patterns()
 }
 
 
@@ -350,7 +455,7 @@ const intern = (module.exports.intern = {
     else {
       return null
     }
-    
+
     return await seneca.entity('sys/group').load$(q)
   }
 
