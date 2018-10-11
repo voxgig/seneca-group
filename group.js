@@ -42,7 +42,7 @@ function group(opts) {
       .message('role:group,get:group', get_group)       // Load group
       .message('role:group,add:group', add_group)       // Add group to owner
       .message('role:group,list:group', list_group)     // List group by owner
-      .message('role:group,list:group-owner', list_group_owner)
+      .message('role:group,list:group-owner', list_group_owner) // List owner by group
       .message('role:group,remove:group', remove_group) // Remove group from owner
     // TODO: retire_group to delete entity
     // TODO: move_group to another owner
@@ -265,16 +265,18 @@ function group(opts) {
     return {items: group_list.items}
   }
 
-
+  
   list_group_owner.validate = {
     id: Joi.string().required(),
+    as: Joi.string(),
   }
 
   async function list_group_owner(msg) {
     const group_id = msg.id
+    const as = msg.as || 'parent-id'
     
     const group_list = await this.post('role:member,list:parents', {
-      as:'parent',
+      as:as,
       kind:'grpown',
       child:msg.id,
       code:msg.code

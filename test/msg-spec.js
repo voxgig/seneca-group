@@ -97,26 +97,31 @@ module.exports = {
     {
       pattern: 'list:group-owner',
       params: {id:'`$.g1`'},
-      out: {}
+      out: { items: [ 'o0' ] }
+    },    
+    {
+      pattern: 'list:group-owner',
+      params: {id:'`$.g1`', as:'parent'},
+      out: { items: [ {id:'o0'} ] }
     },    
     {
       pattern: 'list:group-owner',
       params: {id:'`$.g2`'},
-      out: {}
+      out: { items: [ 'o0' ] }
     },    
     {
       pattern: 'list:group-owner',
       params: {id:'`$.g3`'},
-      out: {}
-    },    
+      out: { items: [ 'o1', 'o2' ] }
+    },
 
-/*
+    /*
     {
       pattern:'role:mem-store,cmd:dump',
       params:{},
       out:{}
     },
-  */  
+    */
 
     // remove group
     {
