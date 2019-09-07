@@ -89,6 +89,7 @@ function group(opts) {
     var group = this.entity('sys/group')
     
     // Unique group means unique over (code,owner_id)
+    // TODO: ensure owner_id defined
     if(unique && null != fields.code) {
       group = await group.load$({code:fields.code, owner_id:owner_id}) || group
       fields.owner_id = owner_id

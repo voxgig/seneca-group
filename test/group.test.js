@@ -3,8 +3,8 @@
 
 const Util = require('util')
 
-const Lab = require('lab')
-const Code = require('code')
+const Lab = require('@hapi/lab')
+const Code = require('@hapi/code')
 const lab = (exports.lab = Lab.script())
 const expect = Code.expect
 
@@ -16,15 +16,17 @@ const Plugin = require('..')
 
 lab.test('validate', PluginValidator(Plugin, module))
 
-lab.test('member-kinds', fin => {
-  seneca_instance(fin)
-    .act('role:member,get:kinds', function(err, out) {
-      expect(out).includes({
-        kinds: {
-          grpown: { p: 'sys/user', c: 'sys/group' },
-          usrgrp: { p: 'sys/group', c: 'sys/user' } } })
-      fin()
-    })
+lab.test('member-kinds', () => {
+  return new Promise((fin) => {
+    seneca_instance(fin)
+      .act('role:member,get:kinds', function(err, out) {
+        expect(out).includes({
+          kinds: {
+            grpown: { p: 'sys/user', c: 'sys/group' },
+            usrgrp: { p: 'sys/group', c: 'sys/user' } } })
+        fin()
+      })
+  })
 })
 
 lab.test(
