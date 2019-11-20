@@ -359,14 +359,24 @@ function group(opts) {
   async function list_user_group(msg) {
     const user_id = msg.user_id
     const owner_id = msg.owner_id
-    
-    const group_list = await this.post('role:member,list:parents', {
+
+    var group_query = {
       child:user_id,
       as:'parent',
-      kind:'usrgrp',
-      code:msg.code
-    })
+      kind:'usrgrp'
+    }
 
+    // TODO: should this be here?
+    if(null != msg.code) {
+      group_query.code = msg.code
+    }
+
+
+    const group_list = await this.post('role:member,list:parents', group_query)
+
+    //console.log('GROUP LIST A',group_list.items.length)
+    //console.dir(group_list)
+    
     if(owner_id) {
       var items = []
 
@@ -374,17 +384,22 @@ function group(opts) {
       // and some users will end up in thousands of groups
       for(var i = 0; i < group_list.items.length; i++) {
         var group = group_list.items[i]
-        var out = await this.post('role:member,is:member', {
-          parent: owner_id, child: group.id, kind: 'grpown', code: msg.owner_code
-        })
 
-        if(out.member) {
-          items.push(group)
+        if(null == msg.kind || group.kind === msg.kind) {
+          var out = await this.post('role:member,is:member', {
+            parent: owner_id, child: group.id, kind: 'grpown', code: msg.owner_code
+          })
+
+          if(out.member) {
+            items.push(group)
+          }
         }
       }
 
       group_list.items = items
     }
+
+    //console.log('GROUP LIST B',group_list.items.length)
     
     return {items: group_list.items}
   }
