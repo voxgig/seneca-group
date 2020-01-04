@@ -1,0 +1,3565 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tests &amp; Coverage</title>
+    <script>
+      headings = [];
+    
+      onload = function () {
+          headings = document.querySelectorAll('h2');
+          reset();
+      };
+    
+      onscroll = function (e) {
+          var heading = find(window.scrollY);
+          if (!heading) {
+            var current = document.querySelector('#menu a.active');
+            if (current) {
+              current.className = '';
+            }
+            return;
+          }
+          var links = document.querySelectorAll('#menu a')
+                  , link;
+    
+          for (var i = 0, len = links.length; i < len; ++i) {
+              link = links[i];
+              link.className = link.getAttribute('href') == '#' + heading.id ? 'active' : '';
+          }
+      };
+    
+      function find (y) {
+          var i = headings.length
+                  , heading;
+    
+          while (i--) {
+              heading = headings[i];
+              if (y >= heading.offsetTop) {
+                  return heading;
+              }
+          }
+      }
+    
+      function toggle (className) {
+    
+          var elements = document.getElementsByClassName(className);
+    
+          for (var i = 0, il = elements.length; i < il; ++i) {
+              var element = elements[i];
+    
+              if (element.classList.contains('hide')) {
+                  element.classList.remove('hide');
+                  element.classList.add('show');
+              }
+              else {
+                  element.classList.remove('show');
+                  element.classList.add('hide');
+              }
+          };
+      }
+    
+      function reset () {
+    
+          var shownElements = document.getElementsByClassName('show');
+          var filterElements = document.querySelectorAll('input[type=checkbox]');
+    
+          for (var i = 0, il = filterElements.length; i < il; ++i) {
+              filterElements[i].checked = false;
+          }
+    
+          // Check any filters with visible elements
+          for (i = 0, il = shownElements.length; i < il; ++i) {
+              var shownElement = shownElements[i];
+              var classNames = shownElement.className.split(' ');
+              for (var ci = 0, cl = classNames.length; ci < cl; ++ci){
+                  var element = document.getElementById('show-' + classNames[ci]);
+                  if (element) {
+                      element.checked = true;
+                  }
+              }
+          }
+      };
+    
+      function filter (element) {
+    
+          toggle(element.value);
+          reset();
+      }
+    </script>
+    <style>
+        body {
+            font: 14px/1.6 Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: #2c2c2c;
+        }
+    
+        #tests, #coverage, #linting {
+            padding: 60px;
+        }
+    
+        h1 a:hover {
+            text-decoration: none;
+        }
+    
+        a[href^="#"],
+        a[href^="#"]:visited {
+            color: inherit;
+            text-decoration: none;
+        }
+    
+        h2 {
+            width: 80%;
+            margin-top: 80px;
+            margin-bottom: 0;
+            font-weight: 100;
+            letter-spacing: 1px;
+        }
+    
+        ul {
+            margin-top: 20px;
+            padding: 0 15px;
+            width: 100%;
+        }
+    
+        ul li {
+            float: left;
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 60px;
+            list-style: none;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+    
+        #menu {
+            position: fixed;
+            font-size: 12px;
+            overflow-y: auto;
+            top: 0;
+            right: 0;
+            margin: 0;
+            height: 100%;
+            padding: 15px 15px;
+            border-left: 1px solid #eee;
+            background-color: #666;
+            z-index: 1;
+        }
+    
+        #menu::after {
+            display: block;
+            content: '';
+            padding-top: 80px;
+        }
+    
+        #menu li a {
+            display: block;
+            color: white;
+            padding: 0 5px 0 35px;
+            transition: background 300ms;
+            text-decoration: none;
+        }
+    
+        #menu li {
+            position: relative;
+            list-style: none;
+        }
+    
+        #menu a:hover,
+        #menu a.active {
+            text-decoration: none;
+            background: rgba(255, 255, 255, .4);
+        }
+    
+        #menu li:hover .cov {
+            opacity: 1;
+        }
+    
+        #menu li .dirname {
+            opacity: .60;
+            padding-right: 2px;
+        }
+    
+        #menu li .basename {
+            opacity: 1;
+        }
+    
+        #menu .cov, #menu .lint {
+            background: rgba(0, 0, 0, .3);
+            position: absolute;
+            top: 0;
+            font-size: 9px;
+            text-align: center;
+            opacity: .8;
+            width: 22px;
+            border-radius: 10px;
+            padding: 2px 3px;
+        }
+    
+        #files .stats:nth-child(2n):not(.hide) {
+            display: inline-block;
+            margin-top: 15px;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    
+        .stats div {
+            float: left;
+            padding: 0 5px;
+        }
+    
+        .stats::after {
+            display: block;
+            content: '';
+            clear: both;
+        }
+    
+        .stats .sloc::after {
+            content: ' SLOC';
+            color: #b6b6b6;
+        }
+    
+        .stats .percentage::after {
+            content: ' coverage';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::after {
+            content: ' Covered';
+            color: #b6b6b6;
+        }
+    
+        .stats .misses::after {
+            content: ' Not Covered)';
+            color: #b6b6b6;
+        }
+    
+        .stats .failures::after {
+            content: ' Failures';
+            color: #b6b6b6;
+        }
+    
+        .stats .skipped::after {
+            content: ' Skipped';
+            color: #b6b6b6;
+        }
+    
+        .stats .test-count::after {
+            content: ' Tests';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::after {
+            content: ' ms)';
+            color: #b6b6b6;
+        }
+    
+        .high {
+            color: #00d4b4;
+        }
+    
+        .medium {
+            color: #e87d0d;
+        }
+    
+        .low {
+            color: #d4081a;
+        }
+    
+        .terrible {
+            color: #d4081a;
+            font-weight: bold;
+        }
+    
+        #files table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #files thead {
+            display: none;
+        }
+    
+        table td.line,
+        table td.lint,
+        table td.hits,
+        table td.original-line {
+            width: 20px;
+            background: #eaeaea;
+            text-align: right;
+            font-size: 11px;
+            padding: 0 10px;
+            color: #949494;
+            white-space: nowrap;
+        }
+    
+        table td.hits {
+            width: 10px;
+            padding: 2px 5px;
+            color: rgba(0, 0, 0, .2);
+            background: #f0f0f0;
+        }
+    
+        table td.lint.empty {
+            width: 0;
+            padding: 0;
+        }
+    
+        table td.lint > span {
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+    
+        table td.lint .errors {
+            background-color: red;
+        }
+    
+        table td.lint .warnings {
+            background-color: orange;
+        }
+    
+        tr.miss td.line,
+        tr.miss td.hits {
+            background: #e6c3c7;
+        }
+    
+        tr.miss td {
+            background: #f8d5d8;
+        }
+    
+        td.source {
+            padding-left: 15px;
+            line-height: 15px;
+            white-space: pre;
+            font: 12px monaco, monospace;
+        }
+    
+        td.source div {
+            display: inline-block;
+        }
+    
+        td.source div.true {
+            background: #bae8bf;
+        }
+    
+        td.source div.false {
+            background: #e8e5ba;
+        }
+    
+        td.source div.never {
+            background: #f8d5d8;
+        }
+    
+        #tests table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #tests thead {
+            background: #F5F5F5;
+        }
+    
+        #tests tr {
+            border: 1px solid #ccc;
+        }
+    
+        #tests td {
+            padding-left: 8px;
+            vertical-align: top;
+        }
+    
+        #tests .success:nth-child(2n) {
+            background: #F5F5F5;
+        }
+    
+        #tests .failure {
+            background: #FF9E9E;
+        }
+    
+        #tests table .skipped {
+            background: #AA82FF;
+        }
+    
+        #tests .success {
+            color: #949494;
+        }
+    
+        #tests .failure .test-title {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    
+        #tests .stack {
+            margin-top: 4px;
+            padding-left: 15px;
+            margin-bottom: 12px;
+            font: 12px monaco, monospace;
+            white-space: pre;
+            line-height: 15px;
+        }
+    
+        .hide {
+            display: none;
+        }
+    
+        .show {
+            display: inherit;
+        }
+    
+        #tests table .show {
+            display: table-row;
+        }
+    
+        [data-tooltip] {
+            position: relative;
+        }
+    
+        [data-tooltip]:hover:before {
+            border: solid;
+            border-color: #333 transparent;
+            border-width: 6px 6px 0 6px;
+            bottom: 20px;
+            content: "";
+            left: 0;
+            position: absolute;
+            z-index: 99;
+        }
+    
+        [data-tooltip]:hover:after {
+            background: #333;
+            background: rgba(0, 0, 0, .8);
+            border-radius: 5px;
+            bottom: 26px;
+            color: #fff;
+            left: -10px;
+            padding: 5px 15px;
+            position: absolute;
+            z-index: 98;
+            content: attr(data-tooltip);
+            white-space: pre;
+            text-align: left;
+        }
+    
+        .line[data-tooltip]:hover:after {
+            content: "Line number";
+        }
+    
+        .hits[data-tooltip]:hover:after {
+            content: "Number of hits";
+        }
+    
+        .miss .source[data-tooltip]:hover:after {
+            content: "Missed line";
+        }
+    
+        .miss.true[data-tooltip]:hover:after {
+            content: "Condition always true";
+        }
+    
+        .miss.false[data-tooltip]:hover:after {
+            content: "Condition always false";
+        }
+    
+        .miss.never[data-tooltip]:hover:after {
+            content: "Statement never reached";
+        }
+    
+        .lint .errors[data-tooltip]:hover:after {
+            content: "Linting errors:\A" attr(data-tooltip);
+        }
+    
+        .lint .warnings[data-tooltip]:hover:after {
+            content: "Linting warnings:\A" attr(data-tooltip);
+        }
+    
+        .original-line[data-tooltip]:hover:after {
+            content: "Original line in file " attr(data-tooltip);
+        }
+    
+        #filters {
+            width: 75%;
+            margin-top: 25px;
+        }
+    
+        #filters label {
+            margin-right: 10px;
+        }
+    
+        .lint-stats .lint-errors::after {
+            content: ' linting errors';
+            color: #b6b6b6;
+        }
+    
+        .lint-stats .lint-warnings::after {
+            content: ' linting warnings';
+            color: #b6b6b6;
+        }
+    
+        .lint-entry {
+            color: #b6b6b6;
+            float: none;
+            padding: 0;
+        }
+    
+        .lint-entry .level-ERROR {
+            color: #d4081a;
+        }
+    
+        .lint-entry .level-WARNING {
+            color: #e87d0d;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="menu">
+        <li><a href="#tests">Test Report</a></li>
+        <li><a href="#coverage">Coverage Report</a></li>
+        <li class="">
+            <span class="cov high">93.47</span>
+            <a href="#group.js"><span class="basename">group.js</span></a>
+        </li>
+        <li><a href="#linting">Linting Report</a></li>
+    </div>
+    <div id="tests">
+      <h1>Test Report</h1>
+      <div class="stats high">
+          <div class="failures">0</div>
+          <div class="skipped">0</div>
+          <div class="test-count">3</div>
+          <div class="duration">541</div>
+      </div>
+      <div id="filters">
+          <input type="checkbox" checked="" onchange="filter(this)" value="success" id="show-success">
+          <label for="show-success">Show Success</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="failure" id="show-failure">
+          <label for="show-failure">Show Failure</label>
+          <br>
+      </div>
+      <table>
+          <thead>
+          <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Duration (ms)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr class="show  success">
+              <td class="test-id">1</td>
+              <td class="test-title">validate
+                  
+              </td>
+              <td class="test-duration">10</td>
+          </tr>
+          <tr class="show  success">
+              <td class="test-id">2</td>
+              <td class="test-title">member-kinds
+                  
+              </td>
+              <td class="test-duration">159</td>
+          </tr>
+          <tr class="show  success">
+              <td class="test-id">3</td>
+              <td class="test-title">group-msgs
+                  
+              </td>
+              <td class="test-duration">363</td>
+          </tr>
+          </tbody>
+      </table>
+    
+    </div>    <div id="coverage">
+        <h1>Code Coverage Report</h1>
+        <div class="stats high">
+            <div class="percentage">93.47%</div>
+            <div class="sloc">352</div>
+            <div class="hits">329</div>
+            <div class="misses">23</div>
+        </div>
+        <div id="filters">
+          <input type="checkbox" checked="" onchange="filter(this)" value="generated" id="show-generated">
+          <label for="show-generated">Show generated files</label>
+        </div>
+        <div id="files">
+            <div class="file ">
+                <h2 id="group.js">group.js </h2>
+                <div class="stats high">
+                    <div class="percentage">93.47%</div>
+                    <div class="sloc">352</div>
+                    <div class="hits">329</div>
+                    <div class="misses">23</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="group.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">/* Copyright (c) 2018-2020 voxgig and other contributors, MIT License */</td>
+                          
+                        </tr>            <tr id="group.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="group.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// sys/user is used to represent organisations - this allows business</td>
+                          
+                        </tr>            <tr id="group.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// logic to build on other sys/user plugins.  Groups can be in more</td>
+                          
+                        </tr>            <tr id="group.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// than one organization (hence the use of seneca-member), although</td>
+                          
+                        </tr>            <tr id="group.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// this is not the primary use-case. Multi-organisation groups can be</td>
+                          
+                        </tr>            <tr id="group.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// used for inter-organization collaboration, as shared permissions</td>
+                          
+                        </tr>            <tr id="group.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">// can be assigned to the group.</td>
+                          
+                        </tr>            <tr id="group.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const SYS_GROUP_SV &#x3D; 0</td>
+                          
+                        </tr>            <tr id="group.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; group</td>
+                          
+                        </tr>            <tr id="group.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports.defaults &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  test: false,</td>
+                          
+                        </tr>            <tr id="group.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  kinds: {</td>
+                          
+                        </tr>            <tr id="group.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    grpown: {</td>
+                          
+                        </tr>            <tr id="group.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      p: &#x27;sys/user&#x27;, // assumes orgs are a special kind of user</td>
+                          
+                        </tr>            <tr id="group.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      c: &#x27;sys/group&#x27;</td>
+                          
+                        </tr>            <tr id="group.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    },</td>
+                          
+                        </tr>            <tr id="group.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    usrgrp: {</td>
+                          
+                        </tr>            <tr id="group.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      p: &#x27;sys/group&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      c: &#x27;sys/user&#x27;</td>
+                          
+                        </tr>            <tr id="group.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__25" class="hit">
+                          <td class="line" data-tooltip>25</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__26" class="hit">
+                          <td class="line" data-tooltip>26</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="group.js__27" class="hit">
+                          <td class="line" data-tooltip>27</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__28" class="hit">
+                          <td class="line" data-tooltip>28</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">function group(opts) {</td>
+                          
+                        </tr>            <tr id="group.js__29" class="hit">
+                          <td class="line" data-tooltip>29</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  const seneca &#x3D; this</td>
+                          
+                        </tr>            <tr id="group.js__30" class="hit">
+                          <td class="line" data-tooltip>30</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  const Joi &#x3D; seneca.util.Joi</td>
+                          
+                        </tr>            <tr id="group.js__31" class="hit">
+                          <td class="line" data-tooltip>31</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  </td>
+                          
+                        </tr>            <tr id="group.js__32" class="hit">
+                          <td class="line" data-tooltip>32</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  function define_patterns() {</td>
+                          
+                        </tr>            <tr id="group.js__33" class="hit">
+                          <td class="line" data-tooltip>33</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">    seneca</td>
+                          
+                        </tr>            <tr id="group.js__34" class="hit">
+                          <td class="line" data-tooltip>34</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,make:group&#x27;, make_group) // Create a group</td>
+                          
+                        </tr>            <tr id="group.js__35" class="hit">
+                          <td class="line" data-tooltip>35</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,amend:group&#x27;, amend_group) // Update group fields</td>
+                          
+                        </tr>            <tr id="group.js__36" class="hit">
+                          <td class="line" data-tooltip>36</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,get:group&#x27;, get_group) // Load group</td>
+                          
+                        </tr>            <tr id="group.js__37" class="hit">
+                          <td class="line" data-tooltip>37</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,add:group&#x27;, add_group) // Add group to owner</td>
+                          
+                        </tr>            <tr id="group.js__38" class="hit">
+                          <td class="line" data-tooltip>38</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,list:group&#x27;, list_group) // List group by owner</td>
+                          
+                        </tr>            <tr id="group.js__39" class="hit">
+                          <td class="line" data-tooltip>39</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,list:group-owner&#x27;, list_group_owner) // List owner by group</td>
+                          
+                        </tr>            <tr id="group.js__40" class="hit">
+                          <td class="line" data-tooltip>40</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,remove:group&#x27;, remove_group) // Remove group from owner</td>
+                          
+                        </tr>            <tr id="group.js__41" class="hit">
+                          <td class="line" data-tooltip>41</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // TODO: retire_group to delete entity</td>
+                          
+                        </tr>            <tr id="group.js__42" class="hit">
+                          <td class="line" data-tooltip>42</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // TODO: move_group to another owner</td>
+                          
+                        </tr>            <tr id="group.js__43" class="hit">
+                          <td class="line" data-tooltip>43</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__44" class="hit">
+                          <td class="line" data-tooltip>44</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,add:user&#x27;, add_user)</td>
+                          
+                        </tr>            <tr id="group.js__45" class="hit">
+                          <td class="line" data-tooltip>45</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,remove:user&#x27;, remove_user)</td>
+                          
+                        </tr>            <tr id="group.js__46" class="hit">
+                          <td class="line" data-tooltip>46</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,list:user&#x27;, list_user)</td>
+                          
+                        </tr>            <tr id="group.js__47" class="hit">
+                          <td class="line" data-tooltip>47</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,list:user-group&#x27;, list_user_group)</td>
+                          
+                        </tr>            <tr id="group.js__48" class="hit">
+                          <td class="line" data-tooltip>48</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .message(&#x27;role:group,is:user-group-owner&#x27;, is_user_in_group_for_owner)</td>
+                          
+                        </tr>            <tr id="group.js__49" class="hit">
+                          <td class="line" data-tooltip>49</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__50" class="hit">
+                          <td class="line" data-tooltip>50</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .prepare(async function() {</td>
+                          
+                        </tr>            <tr id="group.js__51" class="hit">
+                          <td class="line" data-tooltip>51</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        await this.post(&#x27;role:member,add:kinds&#x27;, { kinds: opts.kinds })</td>
+                          
+                        </tr>            <tr id="group.js__52" class="hit">
+                          <td class="line" data-tooltip>52</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      })</td>
+                          
+                        </tr>            <tr id="group.js__53" class="hit">
+                          <td class="line" data-tooltip>53</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__54" class="hit">
+                          <td class="line" data-tooltip>54</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__55" class="hit">
+                          <td class="line" data-tooltip>55</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  make_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__56" class="hit">
+                          <td class="line" data-tooltip>56</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__57" class="hit">
+                          <td class="line" data-tooltip>57</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group: Joi.object({</td>
+                          
+                        </tr>            <tr id="group.js__58" class="hit">
+                          <td class="line" data-tooltip>58</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      name: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__59" class="hit">
+                          <td class="line" data-tooltip>59</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__60" class="hit">
+                          <td class="line" data-tooltip>60</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      tags: Joi.array().items(Joi.string())</td>
+                          
+                        </tr>            <tr id="group.js__61" class="hit">
+                          <td class="line" data-tooltip>61</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__62" class="hit">
+                          <td class="line" data-tooltip>62</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .unknown()</td>
+                          
+                        </tr>            <tr id="group.js__63" class="hit">
+                          <td class="line" data-tooltip>63</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .required(),</td>
+                          
+                        </tr>            <tr id="group.js__64" class="hit">
+                          <td class="line" data-tooltip>64</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    unique: Joi.boolean()</td>
+                          
+                        </tr>            <tr id="group.js__65" class="hit">
+                          <td class="line" data-tooltip>65</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__66" class="hit">
+                          <td class="line" data-tooltip>66</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__67" class="hit">
+                          <td class="line" data-tooltip>67</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function make_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__68" class="hit">
+                          <td class="line" data-tooltip>68</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__69" class="chunks">
+                          <td class="line" data-tooltip>69</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    const fields &#x3D; </div><div class="miss true" data-tooltip>msg.group</div><div> || </div><div class="miss never" data-tooltip>{}</div></td>
+                          
+                        </tr>            <tr id="group.js__70" class="hit">
+                          <td class="line" data-tooltip>70</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const unique &#x3D; !!msg.unique</td>
+                          
+                        </tr>            <tr id="group.js__71" class="hit">
+                          <td class="line" data-tooltip>71</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__72" class="hit">
+                          <td class="line" data-tooltip>72</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    fields.merge$ &#x3D; true</td>
+                          
+                        </tr>            <tr id="group.js__73" class="hit">
+                          <td class="line" data-tooltip>73</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    fields.sv &#x3D; SYS_GROUP_SV</td>
+                          
+                        </tr>            <tr id="group.js__74" class="hit">
+                          <td class="line" data-tooltip>74</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__75" class="hit">
+                          <td class="line" data-tooltip>75</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    var existing &#x3D; await intern.find_group(this, {</td>
+                          
+                        </tr>            <tr id="group.js__76" class="hit">
+                          <td class="line" data-tooltip>76</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      owner_id: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__77" class="hit">
+                          <td class="line" data-tooltip>77</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: fields.code</td>
+                          
+                        </tr>            <tr id="group.js__78" class="hit">
+                          <td class="line" data-tooltip>78</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__79" class="hit">
+                          <td class="line" data-tooltip>79</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__80" class="chunks">
+                          <td class="line" data-tooltip>80</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (existing &amp;&amp; </div><div class="miss true" data-tooltip>existing.unique</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__81" class="hit">
+                          <td class="line" data-tooltip>81</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      return { group: existing, exists: true }</td>
+                          
+                        </tr>            <tr id="group.js__82" class="hit">
+                          <td class="line" data-tooltip>82</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__83" class="hit">
+                          <td class="line" data-tooltip>83</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__84" class="hit">
+                          <td class="line" data-tooltip>84</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    var group &#x3D; this.entity(&#x27;sys/group&#x27;)</td>
+                          
+                        </tr>            <tr id="group.js__85" class="hit">
+                          <td class="line" data-tooltip>85</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__86" class="hit">
+                          <td class="line" data-tooltip>86</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // Unique group means unique over (code,owner_id)</td>
+                          
+                        </tr>            <tr id="group.js__87" class="hit">
+                          <td class="line" data-tooltip>87</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // TODO: ensure owner_id defined</td>
+                          
+                        </tr>            <tr id="group.js__88" class="chunks">
+                          <td class="line" data-tooltip>88</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (unique &amp;&amp; </div><div class="miss true" data-tooltip>null !&#x3D; fields.code</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__89" class="hit">
+                          <td class="line" data-tooltip>89</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      group &#x3D;</td>
+                          
+                        </tr>            <tr id="group.js__90" class="chunks">
+                          <td class="line" data-tooltip>90</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>        (</div><div class="miss false" data-tooltip>await group.load$({ code: fields.code, owner_id: owner_id })</div><div>) || group</div></td>
+                          
+                        </tr>            <tr id="group.js__91" class="hit">
+                          <td class="line" data-tooltip>91</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      fields.owner_id &#x3D; owner_id</td>
+                          
+                        </tr>            <tr id="group.js__92" class="hit">
+                          <td class="line" data-tooltip>92</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      fields.unique &#x3D; true</td>
+                          
+                        </tr>            <tr id="group.js__93" class="hit">
+                          <td class="line" data-tooltip>93</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__94" class="hit">
+                          <td class="line" data-tooltip>94</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__95" class="hit">
+                          <td class="line" data-tooltip>95</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    group &#x3D; await group.data$(fields).save$()</td>
+                          
+                        </tr>            <tr id="group.js__96" class="hit">
+                          <td class="line" data-tooltip>96</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__97" class="hit">
+                          <td class="line" data-tooltip>97</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    await this.post(&#x27;role:member,add:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__98" class="hit">
+                          <td class="line" data-tooltip>98</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__99" class="hit">
+                          <td class="line" data-tooltip>99</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__100" class="hit">
+                          <td class="line" data-tooltip>100</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      child: group.id,</td>
+                          
+                        </tr>            <tr id="group.js__101" class="hit">
+                          <td class="line" data-tooltip>101</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: fields.code,</td>
+                          
+                        </tr>            <tr id="group.js__102" class="hit">
+                          <td class="line" data-tooltip>102</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      tags: fields.tags</td>
+                          
+                        </tr>            <tr id="group.js__103" class="hit">
+                          <td class="line" data-tooltip>103</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__104" class="hit">
+                          <td class="line" data-tooltip>104</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__105" class="hit">
+                          <td class="line" data-tooltip>105</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    return { group: group, created: true }</td>
+                          
+                        </tr>            <tr id="group.js__106" class="hit">
+                          <td class="line" data-tooltip>106</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__107" class="hit">
+                          <td class="line" data-tooltip>107</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__108" class="hit">
+                          <td class="line" data-tooltip>108</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  amend_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__109" class="hit">
+                          <td class="line" data-tooltip>109</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__110" class="hit">
+                          <td class="line" data-tooltip>110</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__111" class="hit">
+                          <td class="line" data-tooltip>111</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__112" class="hit">
+                          <td class="line" data-tooltip>112</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group: Joi.object({</td>
+                          
+                        </tr>            <tr id="group.js__113" class="hit">
+                          <td class="line" data-tooltip>113</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      name: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__114" class="hit">
+                          <td class="line" data-tooltip>114</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      tags: Joi.array().items(Joi.string())</td>
+                          
+                        </tr>            <tr id="group.js__115" class="hit">
+                          <td class="line" data-tooltip>115</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__116" class="hit">
+                          <td class="line" data-tooltip>116</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .unknown()</td>
+                          
+                        </tr>            <tr id="group.js__117" class="hit">
+                          <td class="line" data-tooltip>117</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      .required()</td>
+                          
+                        </tr>            <tr id="group.js__118" class="hit">
+                          <td class="line" data-tooltip>118</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__119" class="hit">
+                          <td class="line" data-tooltip>119</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__120" class="hit">
+                          <td class="line" data-tooltip>120</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  // Only changes fields, not owner, or uniqueness</td>
+                          
+                        </tr>            <tr id="group.js__121" class="hit">
+                          <td class="line" data-tooltip>121</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function amend_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__122" class="hit">
+                          <td class="line" data-tooltip>122</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    var group &#x3D; await intern.find_group(this, msg)</td>
+                          
+                        </tr>            <tr id="group.js__123" class="hit">
+                          <td class="line" data-tooltip>123</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__124" class="chunks">
+                          <td class="line" data-tooltip>124</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss true" data-tooltip>group</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__125" class="chunks">
+                          <td class="line" data-tooltip>125</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      const fields &#x3D; </div><div class="miss true" data-tooltip>msg.group</div><div> || </div><div class="miss never" data-tooltip>{}</div></td>
+                          
+                        </tr>            <tr id="group.js__126" class="hit">
+                          <td class="line" data-tooltip>126</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__127" class="hit">
+                          <td class="line" data-tooltip>127</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // These determine uniqueness so cannot be altered</td>
+                          
+                        </tr>            <tr id="group.js__128" class="hit">
+                          <td class="line" data-tooltip>128</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      delete fields.unique</td>
+                          
+                        </tr>            <tr id="group.js__129" class="hit">
+                          <td class="line" data-tooltip>129</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      delete fields.code</td>
+                          
+                        </tr>            <tr id="group.js__130" class="hit">
+                          <td class="line" data-tooltip>130</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      delete fields.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__131" class="hit">
+                          <td class="line" data-tooltip>131</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__132" class="hit">
+                          <td class="line" data-tooltip>132</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      fields.merge$ &#x3D; true</td>
+                          
+                        </tr>            <tr id="group.js__133" class="hit">
+                          <td class="line" data-tooltip>133</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      fields.sv &#x3D; SYS_GROUP_SV</td>
+                          
+                        </tr>            <tr id="group.js__134" class="hit">
+                          <td class="line" data-tooltip>134</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__135" class="hit">
+                          <td class="line" data-tooltip>135</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      group &#x3D; await group.data$(fields).save$()</td>
+                          
+                        </tr>            <tr id="group.js__136" class="hit">
+                          <td class="line" data-tooltip>136</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__137" class="hit">
+                          <td class="line" data-tooltip>137</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // update tags in membership relations</td>
+                          
+                        </tr>            <tr id="group.js__138" class="chunks">
+                          <td class="line" data-tooltip>138</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      if (</div><div class="miss false" data-tooltip>fields.tags</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__139" class="miss">
+                          <td class="line" data-tooltip>139</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>        const items &#x3D; (</td>
+                          
+                        </tr>            <tr id="group.js__140" class="hit">
+                          <td class="line" data-tooltip>140</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          await this.post(&#x27;role:member,list:parents&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__141" class="hit">
+                          <td class="line" data-tooltip>141</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            as: &#x27;member&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__142" class="hit">
+                          <td class="line" data-tooltip>142</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__143" class="hit">
+                          <td class="line" data-tooltip>143</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            child: group.id</td>
+                          
+                        </tr>            <tr id="group.js__144" class="hit">
+                          <td class="line" data-tooltip>144</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          })</td>
+                          
+                        </tr>            <tr id="group.js__145" class="hit">
+                          <td class="line" data-tooltip>145</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        ).items</td>
+                          
+                        </tr>            <tr id="group.js__146" class="hit">
+                          <td class="line" data-tooltip>146</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__147" class="miss">
+                          <td class="line" data-tooltip>147</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>        for (var i &#x3D; 0; i &lt; items.length; i++) {</td>
+                          
+                        </tr>            <tr id="group.js__148" class="miss">
+                          <td class="line" data-tooltip>148</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>          items[i].tags &#x3D; fields.tags</td>
+                          
+                        </tr>            <tr id="group.js__149" class="miss">
+                          <td class="line" data-tooltip>149</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>          await items[i].save$()</td>
+                          
+                        </tr>            <tr id="group.js__150" class="hit">
+                          <td class="line" data-tooltip>150</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="group.js__151" class="hit">
+                          <td class="line" data-tooltip>151</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }</td>
+                          
+                        </tr>            <tr id="group.js__152" class="hit">
+                          <td class="line" data-tooltip>152</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__153" class="hit">
+                          <td class="line" data-tooltip>153</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__154" class="hit">
+                          <td class="line" data-tooltip>154</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return { group: group }</td>
+                          
+                        </tr>            <tr id="group.js__155" class="hit">
+                          <td class="line" data-tooltip>155</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__156" class="hit">
+                          <td class="line" data-tooltip>156</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__157" class="hit">
+                          <td class="line" data-tooltip>157</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  get_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__158" class="hit">
+                          <td class="line" data-tooltip>158</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__159" class="hit">
+                          <td class="line" data-tooltip>159</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__160" class="hit">
+                          <td class="line" data-tooltip>160</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__161" class="hit">
+                          <td class="line" data-tooltip>161</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__162" class="hit">
+                          <td class="line" data-tooltip>162</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__163" class="hit">
+                          <td class="line" data-tooltip>163</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function get_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__164" class="hit">
+                          <td class="line" data-tooltip>164</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const include_owners &#x3D; !!msg.owners</td>
+                          
+                        </tr>            <tr id="group.js__165" class="hit">
+                          <td class="line" data-tooltip>165</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__166" class="hit">
+                          <td class="line" data-tooltip>166</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const group &#x3D; await intern.find_group(this, msg)</td>
+                          
+                        </tr>            <tr id="group.js__167" class="hit">
+                          <td class="line" data-tooltip>167</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const out &#x3D; { group: group }</td>
+                          
+                        </tr>            <tr id="group.js__168" class="hit">
+                          <td class="line" data-tooltip>168</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__169" class="chunks">
+                          <td class="line" data-tooltip>169</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss true" data-tooltip>group</div><div> &amp;&amp; include_owners) {</div></td>
+                          
+                        </tr>            <tr id="group.js__170" class="hit">
+                          <td class="line" data-tooltip>170</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      out.owners &#x3D; (</td>
+                          
+                        </tr>            <tr id="group.js__171" class="hit">
+                          <td class="line" data-tooltip>171</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        await this.post(&#x27;role:member,list:parents&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__172" class="hit">
+                          <td class="line" data-tooltip>172</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          as: &#x27;parent-id&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__173" class="hit">
+                          <td class="line" data-tooltip>173</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__174" class="hit">
+                          <td class="line" data-tooltip>174</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          child: group.id</td>
+                          
+                        </tr>            <tr id="group.js__175" class="hit">
+                          <td class="line" data-tooltip>175</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        })</td>
+                          
+                        </tr>            <tr id="group.js__176" class="hit">
+                          <td class="line" data-tooltip>176</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      ).items</td>
+                          
+                        </tr>            <tr id="group.js__177" class="hit">
+                          <td class="line" data-tooltip>177</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__178" class="hit">
+                          <td class="line" data-tooltip>178</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__179" class="hit">
+                          <td class="line" data-tooltip>179</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    return out</td>
+                          
+                        </tr>            <tr id="group.js__180" class="hit">
+                          <td class="line" data-tooltip>180</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__181" class="hit">
+                          <td class="line" data-tooltip>181</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__182" class="hit">
+                          <td class="line" data-tooltip>182</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  add_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__183" class="hit">
+                          <td class="line" data-tooltip>183</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__184" class="hit">
+                          <td class="line" data-tooltip>184</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__185" class="hit">
+                          <td class="line" data-tooltip>185</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__186" class="hit">
+                          <td class="line" data-tooltip>186</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    tags: Joi.array().items(Joi.string())</td>
+                          
+                        </tr>            <tr id="group.js__187" class="hit">
+                          <td class="line" data-tooltip>187</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__188" class="hit">
+                          <td class="line" data-tooltip>188</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__189" class="hit">
+                          <td class="line" data-tooltip>189</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function add_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__190" class="hit">
+                          <td class="line" data-tooltip>190</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const group_id &#x3D; msg.id</td>
+                          
+                        </tr>            <tr id="group.js__191" class="hit">
+                          <td class="line" data-tooltip>191</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__192" class="hit">
+                          <td class="line" data-tooltip>192</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__193" class="hit">
+                          <td class="line" data-tooltip>193</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const out &#x3D; { added: false, id: group_id, owner_id: owner_id }</td>
+                          
+                        </tr>            <tr id="group.js__194" class="hit">
+                          <td class="line" data-tooltip>194</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__195" class="hit">
+                          <td class="line" data-tooltip>195</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const owners &#x3D; (</td>
+                          
+                        </tr>            <tr id="group.js__196" class="hit">
+                          <td class="line" data-tooltip>196</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      await this.post(&#x27;role:member,list:parents&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__197" class="hit">
+                          <td class="line" data-tooltip>197</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        as: &#x27;parent-id&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__198" class="hit">
+                          <td class="line" data-tooltip>198</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__199" class="hit">
+                          <td class="line" data-tooltip>199</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        child: group_id</td>
+                          
+                        </tr>            <tr id="group.js__200" class="hit">
+                          <td class="line" data-tooltip>200</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      })</td>
+                          
+                        </tr>            <tr id="group.js__201" class="hit">
+                          <td class="line" data-tooltip>201</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    ).items</td>
+                          
+                        </tr>            <tr id="group.js__202" class="hit">
+                          <td class="line" data-tooltip>202</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__203" class="chunks">
+                          <td class="line" data-tooltip>203</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss true" data-tooltip>!owners.includes(owner_id)</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__204" class="hit">
+                          <td class="line" data-tooltip>204</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      var group &#x3D; this.entity(&#x27;sys/group&#x27;).load$({</td>
+                          
+                        </tr>            <tr id="group.js__205" class="hit">
+                          <td class="line" data-tooltip>205</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        id: group_id,</td>
+                          
+                        </tr>            <tr id="group.js__206" class="hit">
+                          <td class="line" data-tooltip>206</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        fields$: [&#x27;code&#x27;, &#x27;tags&#x27;]</td>
+                          
+                        </tr>            <tr id="group.js__207" class="hit">
+                          <td class="line" data-tooltip>207</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      })</td>
+                          
+                        </tr>            <tr id="group.js__208" class="hit">
+                          <td class="line" data-tooltip>208</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__209" class="chunks">
+                          <td class="line" data-tooltip>209</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      if (</div><div class="miss true" data-tooltip>group</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__210" class="hit">
+                          <td class="line" data-tooltip>210</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">        await this.post(&#x27;role:member,add:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__211" class="hit">
+                          <td class="line" data-tooltip>211</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__212" class="hit">
+                          <td class="line" data-tooltip>212</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__213" class="hit">
+                          <td class="line" data-tooltip>213</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          child: group_id,</td>
+                          
+                        </tr>            <tr id="group.js__214" class="hit">
+                          <td class="line" data-tooltip>214</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__215" class="hit">
+                          <td class="line" data-tooltip>215</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          // NOTE: copied from group</td>
+                          
+                        </tr>            <tr id="group.js__216" class="hit">
+                          <td class="line" data-tooltip>216</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          code: group.code,</td>
+                          
+                        </tr>            <tr id="group.js__217" class="hit">
+                          <td class="line" data-tooltip>217</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          tags: group.tags</td>
+                          
+                        </tr>            <tr id="group.js__218" class="hit">
+                          <td class="line" data-tooltip>218</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        })</td>
+                          
+                        </tr>            <tr id="group.js__219" class="hit">
+                          <td class="line" data-tooltip>219</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__220" class="hit">
+                          <td class="line" data-tooltip>220</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">        out.added &#x3D; true</td>
+                          
+                        </tr>            <tr id="group.js__221" class="hit">
+                          <td class="line" data-tooltip>221</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }</td>
+                          
+                        </tr>            <tr id="group.js__222" class="hit">
+                          <td class="line" data-tooltip>222</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__223" class="hit">
+                          <td class="line" data-tooltip>223</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__224" class="hit">
+                          <td class="line" data-tooltip>224</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return out</td>
+                          
+                        </tr>            <tr id="group.js__225" class="hit">
+                          <td class="line" data-tooltip>225</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__226" class="hit">
+                          <td class="line" data-tooltip>226</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__227" class="hit">
+                          <td class="line" data-tooltip>227</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  remove_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__228" class="hit">
+                          <td class="line" data-tooltip>228</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__229" class="hit">
+                          <td class="line" data-tooltip>229</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string().required()</td>
+                          
+                        </tr>            <tr id="group.js__230" class="hit">
+                          <td class="line" data-tooltip>230</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__231" class="hit">
+                          <td class="line" data-tooltip>231</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__232" class="hit">
+                          <td class="line" data-tooltip>232</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function remove_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__233" class="hit">
+                          <td class="line" data-tooltip>233</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const group_id &#x3D; msg.id</td>
+                          
+                        </tr>            <tr id="group.js__234" class="hit">
+                          <td class="line" data-tooltip>234</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__235" class="hit">
+                          <td class="line" data-tooltip>235</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__236" class="chunks">
+                          <td class="line" data-tooltip>236</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss true" data-tooltip>null !&#x3D; owner_id</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__237" class="hit">
+                          <td class="line" data-tooltip>237</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      await this.post(&#x27;role:member,remove:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__238" class="hit">
+                          <td class="line" data-tooltip>238</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__239" class="hit">
+                          <td class="line" data-tooltip>239</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__240" class="hit">
+                          <td class="line" data-tooltip>240</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        child: group_id</td>
+                          
+                        </tr>            <tr id="group.js__241" class="hit">
+                          <td class="line" data-tooltip>241</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      })</td>
+                          
+                        </tr>            <tr id="group.js__242" class="hit">
+                          <td class="line" data-tooltip>242</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__243" class="hit">
+                          <td class="line" data-tooltip>243</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__244" class="hit">
+                          <td class="line" data-tooltip>244</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return { id: group_id, owner_id: owner_id }</td>
+                          
+                        </tr>            <tr id="group.js__245" class="hit">
+                          <td class="line" data-tooltip>245</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__246" class="hit">
+                          <td class="line" data-tooltip>246</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__247" class="hit">
+                          <td class="line" data-tooltip>247</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  list_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__248" class="hit">
+                          <td class="line" data-tooltip>248</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__249" class="hit">
+                          <td class="line" data-tooltip>249</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__250" class="hit">
+                          <td class="line" data-tooltip>250</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__251" class="hit">
+                          <td class="line" data-tooltip>251</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__252" class="hit">
+                          <td class="line" data-tooltip>252</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function list_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__253" class="hit">
+                          <td class="line" data-tooltip>253</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // TODO: validate, owner_id is required</td>
+                          
+                        </tr>            <tr id="group.js__254" class="hit">
+                          <td class="line" data-tooltip>254</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__255" class="hit">
+                          <td class="line" data-tooltip>255</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">    const code &#x3D; msg.code</td>
+                          
+                        </tr>            <tr id="group.js__256" class="hit">
+                          <td class="line" data-tooltip>256</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__257" class="hit">
+                          <td class="line" data-tooltip>257</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">    const group_list &#x3D; await this.post(&#x27;role:member,list:children&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__258" class="hit">
+                          <td class="line" data-tooltip>258</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      as: &#x27;child&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__259" class="hit">
+                          <td class="line" data-tooltip>259</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__260" class="hit">
+                          <td class="line" data-tooltip>260</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__261" class="hit">
+                          <td class="line" data-tooltip>261</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: code</td>
+                          
+                        </tr>            <tr id="group.js__262" class="hit">
+                          <td class="line" data-tooltip>262</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__263" class="hit">
+                          <td class="line" data-tooltip>263</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__264" class="hit">
+                          <td class="line" data-tooltip>264</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">    return { items: group_list.items }</td>
+                          
+                        </tr>            <tr id="group.js__265" class="hit">
+                          <td class="line" data-tooltip>265</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__266" class="hit">
+                          <td class="line" data-tooltip>266</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__267" class="hit">
+                          <td class="line" data-tooltip>267</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  list_group_owner.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__268" class="hit">
+                          <td class="line" data-tooltip>268</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__269" class="hit">
+                          <td class="line" data-tooltip>269</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    as: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__270" class="hit">
+                          <td class="line" data-tooltip>270</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__271" class="hit">
+                          <td class="line" data-tooltip>271</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__272" class="hit">
+                          <td class="line" data-tooltip>272</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function list_group_owner(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__273" class="hit">
+                          <td class="line" data-tooltip>273</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const group_id &#x3D; msg.id</td>
+                          
+                        </tr>            <tr id="group.js__274" class="hit">
+                          <td class="line" data-tooltip>274</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const as &#x3D; msg.as || &#x27;parent-id&#x27;</td>
+                          
+                        </tr>            <tr id="group.js__275" class="hit">
+                          <td class="line" data-tooltip>275</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__276" class="hit">
+                          <td class="line" data-tooltip>276</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const group_list &#x3D; await this.post(&#x27;role:member,list:parents&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__277" class="hit">
+                          <td class="line" data-tooltip>277</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      as: as,</td>
+                          
+                        </tr>            <tr id="group.js__278" class="hit">
+                          <td class="line" data-tooltip>278</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__279" class="hit">
+                          <td class="line" data-tooltip>279</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      child: group_id,</td>
+                          
+                        </tr>            <tr id="group.js__280" class="hit">
+                          <td class="line" data-tooltip>280</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: msg.code</td>
+                          
+                        </tr>            <tr id="group.js__281" class="hit">
+                          <td class="line" data-tooltip>281</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__282" class="hit">
+                          <td class="line" data-tooltip>282</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__283" class="hit">
+                          <td class="line" data-tooltip>283</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    return { items: group_list.items }</td>
+                          
+                        </tr>            <tr id="group.js__284" class="hit">
+                          <td class="line" data-tooltip>284</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__285" class="hit">
+                          <td class="line" data-tooltip>285</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__286" class="hit">
+                          <td class="line" data-tooltip>286</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  add_user.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__287" class="hit">
+                          <td class="line" data-tooltip>287</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    user_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__288" class="hit">
+                          <td class="line" data-tooltip>288</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__289" class="hit">
+                          <td class="line" data-tooltip>289</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__290" class="hit">
+                          <td class="line" data-tooltip>290</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    tags: Joi.array().items(Joi.string())</td>
+                          
+                        </tr>            <tr id="group.js__291" class="hit">
+                          <td class="line" data-tooltip>291</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__292" class="hit">
+                          <td class="line" data-tooltip>292</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__293" class="hit">
+                          <td class="line" data-tooltip>293</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function add_user(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__294" class="hit">
+                          <td class="line" data-tooltip>294</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const user_id &#x3D; msg.user_id</td>
+                          
+                        </tr>            <tr id="group.js__295" class="hit">
+                          <td class="line" data-tooltip>295</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const grp_id &#x3D; msg.group_id</td>
+                          
+                        </tr>            <tr id="group.js__296" class="hit">
+                          <td class="line" data-tooltip>296</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__297" class="hit">
+                          <td class="line" data-tooltip>297</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    const member &#x3D; await this.post(&#x27;role:member,add:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__298" class="hit">
+                          <td class="line" data-tooltip>298</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      parent: grp_id,</td>
+                          
+                        </tr>            <tr id="group.js__299" class="hit">
+                          <td class="line" data-tooltip>299</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      child: user_id,</td>
+                          
+                        </tr>            <tr id="group.js__300" class="hit">
+                          <td class="line" data-tooltip>300</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;usrgrp&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__301" class="hit">
+                          <td class="line" data-tooltip>301</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: msg.code,</td>
+                          
+                        </tr>            <tr id="group.js__302" class="hit">
+                          <td class="line" data-tooltip>302</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      tags: msg.tags</td>
+                          
+                        </tr>            <tr id="group.js__303" class="hit">
+                          <td class="line" data-tooltip>303</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__304" class="hit">
+                          <td class="line" data-tooltip>304</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__305" class="hit">
+                          <td class="line" data-tooltip>305</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">    return member</td>
+                          
+                        </tr>            <tr id="group.js__306" class="hit">
+                          <td class="line" data-tooltip>306</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__307" class="hit">
+                          <td class="line" data-tooltip>307</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__308" class="hit">
+                          <td class="line" data-tooltip>308</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  remove_user.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__309" class="hit">
+                          <td class="line" data-tooltip>309</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    user_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__310" class="hit">
+                          <td class="line" data-tooltip>310</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__311" class="hit">
+                          <td class="line" data-tooltip>311</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__312" class="hit">
+                          <td class="line" data-tooltip>312</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__313" class="hit">
+                          <td class="line" data-tooltip>313</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__314" class="hit">
+                          <td class="line" data-tooltip>314</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function remove_user(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__315" class="hit">
+                          <td class="line" data-tooltip>315</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const user_id &#x3D; msg.user_id</td>
+                          
+                        </tr>            <tr id="group.js__316" class="hit">
+                          <td class="line" data-tooltip>316</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const grp_id &#x3D; msg.group_id</td>
+                          
+                        </tr>            <tr id="group.js__317" class="hit">
+                          <td class="line" data-tooltip>317</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__318" class="hit">
+                          <td class="line" data-tooltip>318</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const member &#x3D; await this.post(&#x27;role:member,remove:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__319" class="hit">
+                          <td class="line" data-tooltip>319</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      parent: grp_id,</td>
+                          
+                        </tr>            <tr id="group.js__320" class="hit">
+                          <td class="line" data-tooltip>320</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      child: user_id,</td>
+                          
+                        </tr>            <tr id="group.js__321" class="hit">
+                          <td class="line" data-tooltip>321</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;usrgrp&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__322" class="hit">
+                          <td class="line" data-tooltip>322</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: msg.code</td>
+                          
+                        </tr>            <tr id="group.js__323" class="hit">
+                          <td class="line" data-tooltip>323</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__324" class="hit">
+                          <td class="line" data-tooltip>324</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__325" class="hit">
+                          <td class="line" data-tooltip>325</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return { member: member }</td>
+                          
+                        </tr>            <tr id="group.js__326" class="hit">
+                          <td class="line" data-tooltip>326</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__327" class="hit">
+                          <td class="line" data-tooltip>327</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__328" class="hit">
+                          <td class="line" data-tooltip>328</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  list_user.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__329" class="hit">
+                          <td class="line" data-tooltip>329</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__330" class="hit">
+                          <td class="line" data-tooltip>330</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__331" class="hit">
+                          <td class="line" data-tooltip>331</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__332" class="hit">
+                          <td class="line" data-tooltip>332</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__333" class="hit">
+                          <td class="line" data-tooltip>333</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function list_user(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__334" class="hit">
+                          <td class="line" data-tooltip>334</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">    const grp_id &#x3D; msg.group_id</td>
+                          
+                        </tr>            <tr id="group.js__335" class="hit">
+                          <td class="line" data-tooltip>335</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__336" class="hit">
+                          <td class="line" data-tooltip>336</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">    const user_list &#x3D; await this.post(&#x27;role:member,list:children&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__337" class="hit">
+                          <td class="line" data-tooltip>337</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      as: &#x27;child&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__338" class="hit">
+                          <td class="line" data-tooltip>338</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;usrgrp&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__339" class="hit">
+                          <td class="line" data-tooltip>339</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      parent: grp_id,</td>
+                          
+                        </tr>            <tr id="group.js__340" class="hit">
+                          <td class="line" data-tooltip>340</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      code: msg.code</td>
+                          
+                        </tr>            <tr id="group.js__341" class="hit">
+                          <td class="line" data-tooltip>341</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="group.js__342" class="hit">
+                          <td class="line" data-tooltip>342</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__343" class="hit">
+                          <td class="line" data-tooltip>343</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">    return { items: user_list.items }</td>
+                          
+                        </tr>            <tr id="group.js__344" class="hit">
+                          <td class="line" data-tooltip>344</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__345" class="hit">
+                          <td class="line" data-tooltip>345</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__346" class="hit">
+                          <td class="line" data-tooltip>346</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  list_user_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__347" class="hit">
+                          <td class="line" data-tooltip>347</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    user_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__348" class="hit">
+                          <td class="line" data-tooltip>348</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__349" class="hit">
+                          <td class="line" data-tooltip>349</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__350" class="hit">
+                          <td class="line" data-tooltip>350</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__351" class="hit">
+                          <td class="line" data-tooltip>351</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__352" class="hit">
+                          <td class="line" data-tooltip>352</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function list_user_group(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__353" class="hit">
+                          <td class="line" data-tooltip>353</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const user_id &#x3D; msg.user_id</td>
+                          
+                        </tr>            <tr id="group.js__354" class="hit">
+                          <td class="line" data-tooltip>354</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__355" class="hit">
+                          <td class="line" data-tooltip>355</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__356" class="hit">
+                          <td class="line" data-tooltip>356</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    var group_query &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__357" class="hit">
+                          <td class="line" data-tooltip>357</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      child: user_id,</td>
+                          
+                        </tr>            <tr id="group.js__358" class="hit">
+                          <td class="line" data-tooltip>358</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      as: &#x27;parent&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__359" class="hit">
+                          <td class="line" data-tooltip>359</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      kind: &#x27;usrgrp&#x27;</td>
+                          
+                        </tr>            <tr id="group.js__360" class="hit">
+                          <td class="line" data-tooltip>360</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__361" class="hit">
+                          <td class="line" data-tooltip>361</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__362" class="hit">
+                          <td class="line" data-tooltip>362</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // TODO: should this be here?</td>
+                          
+                        </tr>            <tr id="group.js__363" class="chunks">
+                          <td class="line" data-tooltip>363</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss false" data-tooltip>null !&#x3D; msg.code</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__364" class="miss">
+                          <td class="line" data-tooltip>364</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      group_query.code &#x3D; msg.code</td>
+                          
+                        </tr>            <tr id="group.js__365" class="hit">
+                          <td class="line" data-tooltip>365</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__366" class="hit">
+                          <td class="line" data-tooltip>366</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__367" class="hit">
+                          <td class="line" data-tooltip>367</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    const group_list &#x3D; await this.post(&#x27;role:member,list:parents&#x27;, group_query)</td>
+                          
+                        </tr>            <tr id="group.js__368" class="hit">
+                          <td class="line" data-tooltip>368</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__369" class="hit">
+                          <td class="line" data-tooltip>369</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    //console.log(&#x27;GROUP LIST A&#x27;,owner_id,group_query,group_list.items)</td>
+                          
+                        </tr>            <tr id="group.js__370" class="hit">
+                          <td class="line" data-tooltip>370</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    //console.dir(group_list)</td>
+                          
+                        </tr>            <tr id="group.js__371" class="hit">
+                          <td class="line" data-tooltip>371</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__372" class="hit">
+                          <td class="line" data-tooltip>372</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    if (owner_id) {</td>
+                          
+                        </tr>            <tr id="group.js__373" class="hit">
+                          <td class="line" data-tooltip>373</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      /*</td>
+                          
+                        </tr>            <tr id="group.js__374" class="hit">
+                          <td class="line" data-tooltip>374</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        var items &#x3D; []</td>
+                          
+                        </tr>            <tr id="group.js__375" class="hit">
+                          <td class="line" data-tooltip>375</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__376" class="hit">
+                          <td class="line" data-tooltip>376</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // TODO: needs to be optimized, as users groups will grow over time</td>
+                          
+                        </tr>            <tr id="group.js__377" class="hit">
+                          <td class="line" data-tooltip>377</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // and some users will end up in thousands of groups</td>
+                          
+                        </tr>            <tr id="group.js__378" class="hit">
+                          <td class="line" data-tooltip>378</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      for(var i &#x3D; 0; i &lt; group_list.items.length; i++) {</td>
+                          
+                        </tr>            <tr id="group.js__379" class="hit">
+                          <td class="line" data-tooltip>379</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        var group &#x3D; group_list.items[i]</td>
+                          
+                        </tr>            <tr id="group.js__380" class="hit">
+                          <td class="line" data-tooltip>380</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__381" class="hit">
+                          <td class="line" data-tooltip>381</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        if(null &#x3D;&#x3D; msg.kind || group.kind &#x3D;&#x3D;&#x3D; msg.kind) {</td>
+                          
+                        </tr>            <tr id="group.js__382" class="hit">
+                          <td class="line" data-tooltip>382</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__383" class="hit">
+                          <td class="line" data-tooltip>383</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          // TODO: support a &#x60;children&#x60; arg to pass list of ids</td>
+                          
+                        </tr>            <tr id="group.js__384" class="hit">
+                          <td class="line" data-tooltip>384</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          var out &#x3D; await this.post(&#x27;role:member,is:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__385" class="hit">
+                          <td class="line" data-tooltip>385</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            parent: owner_id, child: group.id, kind: &#x27;grpown&#x27;, code: msg.owner_code</td>
+                          
+                        </tr>            <tr id="group.js__386" class="hit">
+                          <td class="line" data-tooltip>386</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          })</td>
+                          
+                        </tr>            <tr id="group.js__387" class="hit">
+                          <td class="line" data-tooltip>387</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__388" class="hit">
+                          <td class="line" data-tooltip>388</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          if(out.member) {</td>
+                          
+                        </tr>            <tr id="group.js__389" class="hit">
+                          <td class="line" data-tooltip>389</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            items.push(group)</td>
+                          
+                        </tr>            <tr id="group.js__390" class="hit">
+                          <td class="line" data-tooltip>390</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          }</td>
+                          
+                        </tr>            <tr id="group.js__391" class="hit">
+                          <td class="line" data-tooltip>391</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="group.js__392" class="hit">
+                          <td class="line" data-tooltip>392</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }</td>
+                          
+                        </tr>            <tr id="group.js__393" class="hit">
+                          <td class="line" data-tooltip>393</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__394" class="hit">
+                          <td class="line" data-tooltip>394</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      group_list.items &#x3D; items</td>
+                          
+                        </tr>            <tr id="group.js__395" class="hit">
+                          <td class="line" data-tooltip>395</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      */</td>
+                          
+                        </tr>            <tr id="group.js__396" class="hit">
+                          <td class="line" data-tooltip>396</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__397" class="hit">
+                          <td class="line" data-tooltip>397</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      var out &#x3D; await this.post(&#x27;role:member,is:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__398" class="hit">
+                          <td class="line" data-tooltip>398</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__399" class="hit">
+                          <td class="line" data-tooltip>399</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        children: group_list.items.map(g &#x3D;&gt; g.id),</td>
+                          
+                        </tr>            <tr id="group.js__400" class="hit">
+                          <td class="line" data-tooltip>400</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        kind: &#x27;grpown&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__401" class="hit">
+                          <td class="line" data-tooltip>401</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        code: msg.owner_code</td>
+                          
+                        </tr>            <tr id="group.js__402" class="hit">
+                          <td class="line" data-tooltip>402</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      })</td>
+                          
+                        </tr>            <tr id="group.js__403" class="hit">
+                          <td class="line" data-tooltip>403</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__404" class="hit">
+                          <td class="line" data-tooltip>404</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // only keep groups that are members of owner_id</td>
+                          
+                        </tr>            <tr id="group.js__405" class="hit">
+                          <td class="line" data-tooltip>405</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      group_list.items &#x3D; out</td>
+                          
+                        </tr>            <tr id="group.js__406" class="hit">
+                          <td class="line" data-tooltip>406</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        .filter(r &#x3D;&gt; r.member)</td>
+                          
+                        </tr>            <tr id="group.js__407" class="hit">
+                          <td class="line" data-tooltip>407</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        .map(r &#x3D;&gt; group_list.items.find(g &#x3D;&gt; g.id &#x3D;&#x3D;&#x3D; r.member.c))</td>
+                          
+                        </tr>            <tr id="group.js__408" class="hit">
+                          <td class="line" data-tooltip>408</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__409" class="hit">
+                          <td class="line" data-tooltip>409</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__410" class="hit">
+                          <td class="line" data-tooltip>410</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    //console.log(&#x27;GROUP LIST B&#x27;,group_list.items)</td>
+                          
+                        </tr>            <tr id="group.js__411" class="hit">
+                          <td class="line" data-tooltip>411</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__412" class="hit">
+                          <td class="line" data-tooltip>412</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>4</td>
+                          <td class="source">    return { items: group_list.items }</td>
+                          
+                        </tr>            <tr id="group.js__413" class="hit">
+                          <td class="line" data-tooltip>413</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__414" class="hit">
+                          <td class="line" data-tooltip>414</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__415" class="hit">
+                          <td class="line" data-tooltip>415</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  list_user_group.validate &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__416" class="hit">
+                          <td class="line" data-tooltip>416</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    user_id: Joi.string().required(),</td>
+                          
+                        </tr>            <tr id="group.js__417" class="hit">
+                          <td class="line" data-tooltip>417</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__418" class="hit">
+                          <td class="line" data-tooltip>418</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    owner_code: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__419" class="hit">
+                          <td class="line" data-tooltip>419</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group_id: Joi.string(),</td>
+                          
+                        </tr>            <tr id="group.js__420" class="hit">
+                          <td class="line" data-tooltip>420</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    group_code: Joi.string()</td>
+                          
+                        </tr>            <tr id="group.js__421" class="hit">
+                          <td class="line" data-tooltip>421</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__422" class="hit">
+                          <td class="line" data-tooltip>422</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__423" class="hit">
+                          <td class="line" data-tooltip>423</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async function is_user_in_group_for_owner(msg) {</td>
+                          
+                        </tr>            <tr id="group.js__424" class="hit">
+                          <td class="line" data-tooltip>424</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const user_id &#x3D; msg.user_id</td>
+                          
+                        </tr>            <tr id="group.js__425" class="hit">
+                          <td class="line" data-tooltip>425</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    var grp_id &#x3D; msg.group_id</td>
+                          
+                        </tr>            <tr id="group.js__426" class="hit">
+                          <td class="line" data-tooltip>426</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const grp_code &#x3D; msg.group_code</td>
+                          
+                        </tr>            <tr id="group.js__427" class="hit">
+                          <td class="line" data-tooltip>427</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const owner_code &#x3D; msg.owner_code</td>
+                          
+                        </tr>            <tr id="group.js__428" class="hit">
+                          <td class="line" data-tooltip>428</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__429" class="hit">
+                          <td class="line" data-tooltip>429</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__430" class="hit">
+                          <td class="line" data-tooltip>430</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // var group &#x3D; null</td>
+                          
+                        </tr>            <tr id="group.js__431" class="hit">
+                          <td class="line" data-tooltip>431</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__432" class="hit">
+                          <td class="line" data-tooltip>432</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // Picks first group with given code</td>
+                          
+                        </tr>            <tr id="group.js__433" class="chunks">
+                          <td class="line" data-tooltip>433</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss true" data-tooltip>null &#x3D;&#x3D; grp_id</div><div> &amp;&amp; </div><div class="miss true" data-tooltip>null !&#x3D; owner_code</div><div> &amp;&amp; </div><div class="miss true" data-tooltip>null !&#x3D; owner_id</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__434" class="hit">
+                          <td class="line" data-tooltip>434</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      var owner_member &#x3D; (</td>
+                          
+                        </tr>            <tr id="group.js__435" class="hit">
+                          <td class="line" data-tooltip>435</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        await this.post(&#x27;role:member,is:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__436" class="hit">
+                          <td class="line" data-tooltip>436</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          as: &#x27;child&#x27;,</td>
+                          
+                        </tr>            <tr id="group.js__437" class="hit">
+                          <td class="line" data-tooltip>437</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          parent: owner_id,</td>
+                          
+                        </tr>            <tr id="group.js__438" class="hit">
+                          <td class="line" data-tooltip>438</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          code: owner_code</td>
+                          
+                        </tr>            <tr id="group.js__439" class="hit">
+                          <td class="line" data-tooltip>439</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        })</td>
+                          
+                        </tr>            <tr id="group.js__440" class="hit">
+                          <td class="line" data-tooltip>440</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      ).member</td>
+                          
+                        </tr>            <tr id="group.js__441" class="hit">
+                          <td class="line" data-tooltip>441</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__442" class="chunks">
+                          <td class="line" data-tooltip>442</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      grp_id &#x3D; </div><div class="miss false" data-tooltip>owner_member</div><div> &amp;&amp; </div><div class="miss never" data-tooltip>owner_member.c</div></td>
+                          
+                        </tr>            <tr id="group.js__443" class="hit">
+                          <td class="line" data-tooltip>443</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__444" class="hit">
+                          <td class="line" data-tooltip>444</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__445" class="hit">
+                          <td class="line" data-tooltip>445</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    var member &#x3D; null</td>
+                          
+                        </tr>            <tr id="group.js__446" class="hit">
+                          <td class="line" data-tooltip>446</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__447" class="chunks">
+                          <td class="line" data-tooltip>447</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss false" data-tooltip>grp_id</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__448" class="miss">
+                          <td class="line" data-tooltip>448</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      member &#x3D; (</td>
+                          
+                        </tr>            <tr id="group.js__449" class="hit">
+                          <td class="line" data-tooltip>449</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        await this.post(&#x27;role:member,is:member&#x27;, {</td>
+                          
+                        </tr>            <tr id="group.js__450" class="hit">
+                          <td class="line" data-tooltip>450</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          parent: grp_id,</td>
+                          
+                        </tr>            <tr id="group.js__451" class="hit">
+                          <td class="line" data-tooltip>451</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          child: user_id</td>
+                          
+                        </tr>            <tr id="group.js__452" class="hit">
+                          <td class="line" data-tooltip>452</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        })</td>
+                          
+                        </tr>            <tr id="group.js__453" class="hit">
+                          <td class="line" data-tooltip>453</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      ).member</td>
+                          
+                        </tr>            <tr id="group.js__454" class="hit">
+                          <td class="line" data-tooltip>454</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__455" class="hit">
+                          <td class="line" data-tooltip>455</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__456" class="hit">
+                          <td class="line" data-tooltip>456</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return {</td>
+                          
+                        </tr>            <tr id="group.js__457" class="hit">
+                          <td class="line" data-tooltip>457</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      member: member,</td>
+                          
+                        </tr>            <tr id="group.js__458" class="hit">
+                          <td class="line" data-tooltip>458</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      user_id: user_id,</td>
+                          
+                        </tr>            <tr id="group.js__459" class="hit">
+                          <td class="line" data-tooltip>459</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      group_id: grp_id,</td>
+                          
+                        </tr>            <tr id="group.js__460" class="hit">
+                          <td class="line" data-tooltip>460</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      group_code: grp_code,</td>
+                          
+                        </tr>            <tr id="group.js__461" class="hit">
+                          <td class="line" data-tooltip>461</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      owner_code: owner_code,</td>
+                          
+                        </tr>            <tr id="group.js__462" class="hit">
+                          <td class="line" data-tooltip>462</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      owner_id: owner_id</td>
+                          
+                        </tr>            <tr id="group.js__463" class="hit">
+                          <td class="line" data-tooltip>463</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__464" class="hit">
+                          <td class="line" data-tooltip>464</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__465" class="hit">
+                          <td class="line" data-tooltip>465</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__466" class="hit">
+                          <td class="line" data-tooltip>466</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2</td>
+                          <td class="source">  return define_patterns()</td>
+                          
+                        </tr>            <tr id="group.js__467" class="hit">
+                          <td class="line" data-tooltip>467</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="group.js__468" class="hit">
+                          <td class="line" data-tooltip>468</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__469" class="hit">
+                          <td class="line" data-tooltip>469</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const intern &#x3D; (module.exports.intern &#x3D; {</td>
+                          
+                        </tr>            <tr id="group.js__470" class="hit">
+                          <td class="line" data-tooltip>470</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  find_group: async function(seneca, msg) {</td>
+                          
+                        </tr>            <tr id="group.js__471" class="hit">
+                          <td class="line" data-tooltip>471</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    const q &#x3D; {}</td>
+                          
+                        </tr>            <tr id="group.js__472" class="hit">
+                          <td class="line" data-tooltip>472</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__473" class="hit">
+                          <td class="line" data-tooltip>473</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>8</td>
+                          <td class="source">    if (null !&#x3D; msg.id) {</td>
+                          
+                        </tr>            <tr id="group.js__474" class="hit">
+                          <td class="line" data-tooltip>474</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3</td>
+                          <td class="source">      q.id &#x3D; msg.id</td>
+                          
+                        </tr>            <tr id="group.js__475" class="hit">
+                          <td class="line" data-tooltip>475</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__476" class="hit">
+                          <td class="line" data-tooltip>476</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__477" class="hit">
+                          <td class="line" data-tooltip>477</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    // NOTE: both needed to preserve code uniquness of group within owner</td>
+                          
+                        </tr>            <tr id="group.js__478" class="chunks">
+                          <td class="line" data-tooltip>478</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    else if (</div><div class="miss true" data-tooltip>null !&#x3D; msg.owner_id</div><div> &amp;&amp; </div><div class="miss true" data-tooltip>null !&#x3D; msg.code</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="group.js__479" class="hit">
+                          <td class="line" data-tooltip>479</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">      q.owner_id &#x3D; msg.owner_id</td>
+                          
+                        </tr>            <tr id="group.js__480" class="hit">
+                          <td class="line" data-tooltip>480</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>5</td>
+                          <td class="source">      q.code &#x3D; msg.code</td>
+                          
+                        </tr>            <tr id="group.js__481" class="hit">
+                          <td class="line" data-tooltip>481</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    } else {</td>
+                          
+                        </tr>            <tr id="group.js__482" class="miss">
+                          <td class="line" data-tooltip>482</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      return null</td>
+                          
+                        </tr>            <tr id="group.js__483" class="hit">
+                          <td class="line" data-tooltip>483</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="group.js__484" class="hit">
+                          <td class="line" data-tooltip>484</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="group.js__485" class="hit">
+                          <td class="line" data-tooltip>485</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>8</td>
+                          <td class="source">    return await seneca.entity(&#x27;sys/group&#x27;).load$(q)</td>
+                          
+                        </tr>            <tr id="group.js__486" class="hit">
+                          <td class="line" data-tooltip>486</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="group.js__487" class="hit">
+                          <td class="line" data-tooltip>487</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">})</td>
+                          
+                        </tr>            <tr id="group.js__488" class="hit">
+                          <td class="line" data-tooltip>488</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>    <div id="linting">
+        <h1>Linting Report</h1>
+            <div class="lint-stats">
+                <span class="lint-errors high">0</span>
+                <span class="lint-warnings high">0</span>
+            </div>
+            <div class="lint-files">
+            </div>
+    </div>  </body>
+</html>

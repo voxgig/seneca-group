@@ -1,7 +1,5 @@
-/* Copyright (c) 2018 voxgig and other contributors, MIT License */
+/* Copyright (c) 2018-2020 voxgig and other contributors, MIT License */
 'use strict'
-
-const Util = require('util')
 
 const Lab = require('@hapi/lab')
 const Code = require('@hapi/code')
@@ -13,19 +11,19 @@ const PluginValidator = require('seneca-plugin-validator')
 const Seneca = require('seneca')
 const Plugin = require('..')
 
-
 lab.test('validate', PluginValidator(Plugin, module))
 
 lab.test('member-kinds', () => {
-  return new Promise((fin) => {
-    seneca_instance(fin)
-      .act('role:member,get:kinds', function(err, out) {
-        expect(out).includes({
-          kinds: {
-            grpown: { p: 'sys/user', c: 'sys/group' },
-            usrgrp: { p: 'sys/group', c: 'sys/user' } } })
-        fin()
+  return new Promise(fin => {
+    seneca_instance(fin).act('role:member,get:kinds', function(err, out) {
+      expect(out).includes({
+        kinds: {
+          grpown: { p: 'sys/user', c: 'sys/group' },
+          usrgrp: { p: 'sys/group', c: 'sys/user' }
+        }
       })
+      fin()
+    })
   })
 })
 
