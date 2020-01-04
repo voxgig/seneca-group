@@ -28,7 +28,7 @@ module.exports.defaults = {
 function group(opts) {
   const seneca = this
   const Joi = seneca.util.Joi
-  
+
   function define_patterns() {
     seneca
       .message('role:group,make:group', make_group) // Create a group
