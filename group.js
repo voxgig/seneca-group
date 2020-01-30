@@ -402,7 +402,7 @@ function group(opts) {
       })
 
       // console.log('GROUP UL out', out)
-      
+
       // only keep groups that are members of owner_id
       group_list.items = out
         .filter(r => r.member)

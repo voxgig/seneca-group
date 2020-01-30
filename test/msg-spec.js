@@ -5,7 +5,7 @@ module.exports = {
   print: true,
   test: true,
   log: false,
-  data: JSON.stringify(require('./data.js')),
+  data: require('./data.js'),
   fix: 'role:group',
   context: {},
   calls: [

@@ -1,6 +1,6 @@
 {
   "name": "seneca-group",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Seneca plugin for user and group permissions.",
   "main": "group.js",
   "scripts": {
@@ -33,20 +33,20 @@
     "node": ">=8"
   },
   "dependencies": {
-    "optioner": "4.2"
+    "optioner": "5.0"
   },
   "devDependencies": {
     "@hapi/code": "^8.0.1",
-    "@hapi/lab": "^22.0.2",
+    "@hapi/lab": "^22.0.3",
     "coveralls": "^3.0.9",
     "prettier": "^1.19.1",
     "seneca": "plugin",
-    "seneca-doc": "^1.6.1",
-    "seneca-entity": "^6.0.0",
-    "seneca-joi": "^6.0.0",
-    "seneca-member": "^0.4.0",
-    "seneca-msg-test": "^2.1.1",
-    "seneca-plugin-validator": "^0.5.0",
-    "seneca-promisify": "^1.1.0"
+    "seneca-doc": "^2.0.1",
+    "seneca-entity": "^7.0.0",
+    "seneca-joi": "^7.0.1",
+    "seneca-member": "^0.5.0",
+    "seneca-msg-test": "^2.2.0",
+    "seneca-plugin-validator": "^0.6.0",
+    "seneca-promisify": "^1.2.0"
   }
 }
