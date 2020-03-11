@@ -1,10 +1,8 @@
 /* Copyright (c) 2018-2020 voxgig and other contributors, MIT License */
 'use strict'
 
-
 const SenecaMsgTest = require('seneca-msg-test')
 const LN = SenecaMsgTest.LN
-
 
 module.exports = {
   print: true,
@@ -24,7 +22,7 @@ module.exports = {
       },
       out: { group: { mark: 'a', name: 'Group One', code: 'standard' } }
     }),
-    
+
     {
       pattern: 'amend:group',
       params: {

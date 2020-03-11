@@ -31,13 +31,15 @@ var msgtest_instance = null
 
 lab.test(
   'group-msgs',
-  SenecaMsgTest(msgtest_instance = seneca_instance(), require('./msg-spec.js'))
+  SenecaMsgTest(
+    (msgtest_instance = seneca_instance()),
+    require('./msg-spec.js')
+  )
 )
 
-lab.test('final', ()=>{
+lab.test('final', () => {
   console.log(msgtest_instance.stats())
 })
-
 
 function seneca_instance(fin, testmode) {
   return Seneca()
