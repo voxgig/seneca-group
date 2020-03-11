@@ -41,11 +41,11 @@
     "coveralls": "^3.0.9",
     "prettier": "^1.19.1",
     "seneca": "plugin",
-    "seneca-doc": "^2.0.1",
-    "seneca-entity": "^7.0.0",
+    "seneca-doc": "^2.1.2",
+    "seneca-entity": "^7.1.0",
     "seneca-joi": "^7.0.1",
-    "seneca-member": "^0.5.0",
-    "seneca-msg-test": "^2.2.0",
+    "seneca-member": "^1.0.0",
+    "seneca-msg-test": "^2.4.0",
     "seneca-plugin-validator": "^0.6.0",
     "seneca-promisify": "^1.2.0"
   }

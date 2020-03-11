@@ -404,9 +404,10 @@ function group(opts) {
       // console.log('GROUP UL out', out)
 
       // only keep groups that are members of owner_id
-      group_list.items = out
-        .filter(r => r.member)
-        .map(r => group_list.items.find(g => g.id === r.member.c))
+      group_list.items = out.members
+        //.filter(r => r.member)
+        //.map(r => group_list.items.find(g => g.id === r.member.c))
+        .map(member => group_list.items.find(g => g.id === member.c))
     }
 
     //console.log('GROUP LIST B',group_list.items)
